@@ -12,5 +12,5 @@ docker run -it --net=host --privileged --gpus all \
   -v "/home/$USER/code/docker_home/dvo:/home/$USER/" \
   --device=/dev/dri:/dev/dri \
   --name=${container_name} \
-  umrobotics/visualization:latest
+  dvo/visualization:latest
 

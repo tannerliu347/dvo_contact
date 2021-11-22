@@ -8,7 +8,7 @@ Then to build the docker image so that you can run it, type `docker build --tag 
 
 
 ### How to create a container after building this dockerfile?
-`bash run_cuda_docker.bash [container_name]`
+`bash run_dvo_docker.bash [container_name]`
 
 
 
