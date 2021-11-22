@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxcb1-dev \
         libxext-dev \
         libx11-dev \ 
+	ca-certificates \
         git \
         tmux \
         wget \
