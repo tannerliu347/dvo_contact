@@ -1,7 +1,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <memory>
-
+#include <eigen3/Eigen/Geometry>
 #include "intrinsic.h"
 
 namespace dvo {
@@ -10,6 +10,9 @@ typedef Eigen::Matrix<float, 8, 1> Vector8f;
 typedef Eigen::Matrix<float, 4, Eigen::Dynamic, Eigen::ColMajor> PointCloud;
 typedef std::shared_ptr<RgbdCamera> RgbdCameraPtr;
 typedef std::shared_ptr<const RgbdCamera> RgbdCameraConstPtr;
+typedef Eigen::Transform<float,3, Eigen::Affine> AffineTransform;
+static const float Invalid = std::numeric_limits<float>::quiet_NaN();
+
 
 class PtIntensityDepth{
 public:
@@ -114,4 +117,77 @@ private:
     std::vector<RgbdImagePtr> levels_;
 };
 
-}
+class RgbdImage {
+public:
+    RgbdImage(const RgbdCamera& camera);
+    virtual ~RgbdImage();
+
+    const RgbdCamera& camera() const;
+
+    cv::Mat intensity;
+    cv::Mat intensity_dx;
+    cv::Mat intensity_dy;
+
+    cv::Mat depth;
+    cv::Mat depth_dx;
+    cv::Mat depth_dy;
+
+    cv::Mat normals, angles;
+
+    cv::Mat rgb;
+
+    PointCloud point_cloud;
+    cv::Mat_<Vector8f> acceleration;
+
+    size_t width, height;
+    double timestamp;
+
+    bool hasIntensity() const;
+    bool hasDepth() const;
+    bool hasRgb() const;
+
+    void initialize();
+
+    void calculateDerivatives();
+    void calculateIntensityDerivatives();
+    void calculateDepthDerivatives();
+    void calculateNormals();
+    
+    // TODO: need to include the point cloud part in camera!
+    void buildPointCloud();
+
+    void buildAccelerationStructure();
+    
+    // inverse warping
+    // transformation is the transformation from reference to this image
+    void warpIntensity(const AffineTransform& transformation, const PointCloud& reference_pointcloud, 
+                       const Intrinsic& intrinsics, RgbdImage& result, PointCloud& transformed_pointcloud);
+    // forward warping
+    // transformation is the transformation from this image to the reference image
+    void warpIntensityForward(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result, cv::Mat_<cv::Vec3d>& cloud);
+    void warpDepthForward(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result, cv::Mat_<cv::Vec3d>& cloud);
+    
+    bool inImage(const float& x, const float& y) const;
+    // TOIGNORE: Advanced didn't used in the code
+    // void warpDepthForwardAdvanced(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result);
+
+private:
+    bool intensity_requires_calculation_, depth_requires_calculation_, pointcloud_requires_build_;
+    const RgbdCamera& camera_;
+
+    void calculateDerivativeX(const cv::Mat& img, cv::Mat& result);
+    void calculateDerivativeY(const cv::Mat& img, cv::Mat& result);
+
+    enum WarpIntensityOptions
+    {
+        WithPointCloud,
+        WithoutPointCloud,
+    };
+
+    // TOIGNORE: ignore following functions because of SSE
+    // void calculateDerivativeYSseFloat(const cv::Mat& img, cv::Mat& result);
+    // template<int PointCloudOption>
+    // void warpIntensitySseImpl(const AffineTransform& transformation, const PointCloud& reference_pointcloud, const IntrinsicMatrix& intrinsics, RgbdImage& result, PointCloud& transformed_pointcloud);
+};
+
+}//namespace dvo
