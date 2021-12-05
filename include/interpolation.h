@@ -4,7 +4,7 @@
 
 namespace dvo {
 
-static const float Invalid = std::numeric_limits<float>::quiet_NaN();
+// static const float Invalid = std::numeric_limits<float>::quiet_NaN();
 
 class Interpolation {
 public:    

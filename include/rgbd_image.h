@@ -1,3 +1,5 @@
+#pragma once
+
 #include <opencv2/opencv.hpp>
 
 #include <memory>
@@ -8,8 +10,6 @@ namespace dvo {
 
 typedef Eigen::Matrix<float, 8, 1> Vector8f;
 typedef Eigen::Matrix<float, 4, Eigen::Dynamic, Eigen::ColMajor> PointCloud;
-typedef std::shared_ptr<RgbdCamera> RgbdCameraPtr;
-typedef std::shared_ptr<const RgbdCamera> RgbdCameraConstPtr;
 typedef Eigen::Transform<float,3, Eigen::Affine> AffineTransform;
 static const float Invalid = std::numeric_limits<float>::quiet_NaN();
 
@@ -41,7 +41,7 @@ public:
     }
 
     Vector8f getIntensityDepthAndDeriv() {
-        Eigen::Vector2f res;
+        Vector8f res;
         res << i_, d_, idx_, idy_, ddx_, ddy_, time_interp_, 0.0f;
         return res;
     }
@@ -78,6 +78,9 @@ private:
     dvo::Intrinsic intrinsics_;
     PointCloud pointcloud_template_;
 };
+
+typedef std::shared_ptr<RgbdCamera> RgbdCameraPtr;
+typedef std::shared_ptr<const RgbdCamera> RgbdCameraConstPtr;
 
 class CameraPyramid {
 public:
