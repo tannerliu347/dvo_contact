@@ -1,6 +1,7 @@
 #include "FrontendSolver.h"
 #include <iostream>
 #include <opencv2/core/core.hpp>
+#include <opencv2/core/eigen.hpp>
 #include <ceres/ceres.h>
 #include <chrono>
 
@@ -13,8 +14,68 @@ public:
     Eigen::Matrix4d solve (const RGBDImage& img1, const RGBDImage& img2, Eigen::Matrix initial_guess=identity());
 };
 */
+
+/*
+class ReprojectionError {
+ public:
+  ReprojectionError(
+      const Eigen::Matrix<double, 3, 4>& projection_matrix,
+      const Eigen::Vector2d& feature)
+      : projection_matrix_(projection_matrix), feature_(feature) {}
+
+  template <typename T>
+  bool operator()(const T* input_point, T* reprojection_error) const {
+    Eigen::Map<const Eigen::Matrix<T, 4, 1> > point(input_point);
+
+    // Multiply the point with the projection matrix, then perform homogeneous
+    // normalization to obtain the 2D pixel location of the reprojection.
+    const Eigen::Matrix<T, 2, 1> reprojected_pixel =
+        (projection_matrix_.cast<T>() * input_point).hnormalized();
+
+    // Reprojection error is the distance from the reprojection to the observed
+    // feature location.
+    reprojection_error[0] = feature_[0] - reprojected_pixel[0];
+    reprojection_error[1] = feature_[1] - reprojected_pixel[1];
+    return true;
+  }
+
+ private:
+  const Eigen::Matrix<double, 3, 4>& projection_matrix_;
+  const Eigen::Vector2d& feature_;
+};
+*/
+class PhotometricError {
+ public:
+  PhotometricError(const dvo::PointCloud& pc_1, const RGBDImage& img2) : pc_1_ (pc_1), 
+                                                                           img2_ (img2),
+                                                                           img_width_(img2.width),
+                                                                           img_height_(img2.height) {} 
+
+  template <typename T>
+  bool operator()(const T* transform, T* residual) const {
+    Eigen::Map<const Eigen::Matrix<T, 4, img_height_ * img_width_>> pc_1_eigen(pc_1);
+    
+    const Eigen::Matrix<T, 2, img_height_ * img_width_> img2.intensity;
+        (projection_matrix_.cast<T>() * input_point).hnormalized();
+
+
+    // Reprojection error is the distance from the reprojection to the observed
+    // feature location.
+    reprojection_error[0] = feature_[0] - reprojected_pixel[0];
+    reprojection_error[1] = feature_[1] - reprojected_pixel[1];
+    return true;
+  }
+
+ private:
+    const dvo::PointCloud& pc_1_;
+    const RGBDImage& img2_; 
+    int img_width_;
+    int img_height_;
+};
+
+
 // 代价函数的计算模型
-struct PHOTOMETRIC_COST
+/* struct PHOTOMETRIC_COST_MatrixMultiply
 {
     PHOTOMETRIC_COST ( const RGBDImage& x, const RGBDImage& y ) : _x ( x ), _y ( y ) {}
     // 残差的计算
@@ -29,7 +90,7 @@ struct PHOTOMETRIC_COST
     const RGBDImage& _x, _y;    // x,y数据
 };
 
-struct PHOTOMETRIC_COST
+struct PHOTOMETRIC_COST_Eigen
 {
     PHOTOMETRIC_COST ( const RGBDImage& x, const RGBDImage& y ) : _x ( x ), _y ( y ) {}
     // 残差的计算
@@ -42,7 +103,7 @@ struct PHOTOMETRIC_COST
         return true;
     }
     const RGBDImage& _x, _y;    // x,y数据
-};
+}; */
 
 Eigen::Matrix4d FrontendSolver::solve(const RGBDImage& img1, const RGBDImage& img2, Eigen::Matrix initial_guess)
 {
