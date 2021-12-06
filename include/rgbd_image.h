@@ -70,6 +70,7 @@ public:
 
     RgbdImagePtr create(const cv::Mat& intensity, const cv::Mat& depth) const;
     RgbdImagePtr create() const;
+    void buildPointCloud(const cv::Mat &depth, PointCloud& pointcloud) const;
 
 private:
     bool hasSamesize(const cv::Mat& img) const;
