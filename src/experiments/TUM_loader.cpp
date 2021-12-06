@@ -51,7 +51,7 @@ std::pair<std::vector<cv::Mat>, float> TUMLoader::getNext() {
 }
 
 Intrinsic TUMLoader::getIntrinsic() {
-
+    return cam_calib_;
 }
 
 }

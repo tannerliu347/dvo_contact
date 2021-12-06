@@ -8,7 +8,7 @@ endif()
 
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -17,6 +17,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
+find_package(Pangolin 0.4 REQUIRED)
 
 # Yaml:
 # find_package(  yaml-cpp REQUIRED )
@@ -65,7 +66,8 @@ mark_as_advanced(YAMLCPP_INCLUDE_DIR YAMLCPP_LIBRARY)
 message(${PROJECT_SOURCE_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/include
-                    ${PROJECT_SOURCE_DIR}/include/experiments)
+                    ${PROJECT_SOURCE_DIR}/include/experiments
+                    ${Pangolin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/intrinsic.cpp
@@ -90,3 +92,7 @@ target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
                                        ${PROJECT_NAME}_point_selection
                                        ${OpenCV_LIBS}
                                        ${Yaml_cpp_LIBRARY})
+                                       ${Pangolin_LIBRARIES})
+                                    #    pango_display
+                                    #    pango_scene
+                                    #    /usr/local/lib/libpango_windowing.so)
