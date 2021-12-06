@@ -2,3 +2,4 @@ build
 .vscode
 dataset/*
 !dataset/associate.py
+config/config.yaml
