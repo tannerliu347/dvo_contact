@@ -8,5 +8,5 @@ private:
     dvo::Intrinsic intrinsic_;
 public:
     FrontendSolver(const dvo::Intrinsic & intrinsic);
-    Eigen::Matrix4d solve (const RGBDImage& img1, const RGBDImage& img2, Eigen::Matrix initial_guess=identity());
+    Eigen::Matrix4d solve (const dvo::RgbdImage& img1, const dvo::RgbdImage& img2, Eigen::Matrix4d initial_guess);
 };

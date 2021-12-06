@@ -17,6 +17,8 @@ public:
     float ox() const;
     float oy() const;
 
+    Eigen::Matrix3f get_intrinsic_matrix() const;
+
     void invertOffset();
     void scale(float factor);
 

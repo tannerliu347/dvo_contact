@@ -2,7 +2,10 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
+
+// #include <filesystem>
 #include <iostream>
+#include <vector>
 
 #include "rgbd_image.h"
 
@@ -15,7 +18,8 @@
 
 using namespace cv;
 using namespace std;
-using namespace cv::features2d;
+// namespace fs = std::filesystem;
+// using namespace cv::xfeatures2d;
 
 const int MAX_FEATURES = 500;
 const float GOOD_MATCH_PERCENT = 0.15f;
@@ -27,11 +31,10 @@ void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descript
 }
 
 
-
 Mat read_image(const char* filename)
 {
-    std::string image_path = samples::findFile(filename);
-    Mat img = imread(image_path, IMREAD_GRAYSCALE);
+    std::string image_path = filename;
+    Mat img = imread(image_path, IMREAD_COLOR);
     return img;
 }
 
@@ -39,22 +42,42 @@ Mat read_image(const char* filename)
 
 int main()
 {
-    Mat img1 = read_image("img1.png");
-    Mat img2 = read_image("img2.png");
-    if(img1.empty() || img2.empty())
+    Mat img1_cvmat = read_image("../dvo_contact/experiments/test_img/img1.png");
+    Mat img2_cvmat = read_image("../dvo_contact/experiments/test_img/img1.png");
+    if(img1_cvmat.empty() || img2_cvmat.empty())
     {
         std::cout << "Image load failed!" << std::endl;
         return -1;
     }
-    Eigen::Matrix3f intrinstic_mat { 
-        {}
-    }
-    dvo::Intrinsic cam_intrinsic = new dvo::Intrinsic();
+
+    float fx = 535.4;
+    float fy = 539.2;
+    float ox = 320.1;
+    float oy = 247.6;
+
+
+    Eigen::Matrix3f intrinsic_mat;
+    intrinsic_mat << fx, ox, 0.f, 0.f, fy, oy, 0.f, 0.f, 0.f;
+    
+    dvo::Intrinsic cam_intrinsic(intrinsic_mat);
+    // cam_intrinsic =  dvo::Intrinsic::Intrinsic(intrinsic_mat);
 
 
     size_t cam_width = 640;
     size_t cam_height = 480;
-    camera = dvo::RgbdCamera()
+    dvo::RgbdCamera camera(cam_width, cam_height, cam_intrinsic);
+    
+    dvo::RgbdImage img1(camera);
+    dvo::RgbdImage img2(camera);
+
+    img1.intensity = img1_cvmat;
+
+    vector<KeyPoint> kps;
+    Mat des;
+    extract_orb_features(img1_cvmat, kps, des);
+
+    cout << "DEBUG, check keypoints " << kps[0].pt <<endl;
+
 
     
     
