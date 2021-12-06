@@ -7,8 +7,8 @@ namespace dvo {
 
 class Intrinsic {
 public:
-    Intrinsic() {}
-
+    Intrinsic(); 
+    Intrinsic(Eigen::Matrix3f cam_data);
     Intrinsic(const Intrinsic& other);
 
     float fx() const;

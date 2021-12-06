@@ -2,6 +2,9 @@
 
 namespace dvo {
 
+Intrinsic::Intrinsic(Eigen::Matrix3f cam_data) {
+    data_ = cam_data;
+}
 
 Intrinsic::Intrinsic(const Intrinsic& other) : data_(other.data_) {}
 

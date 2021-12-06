@@ -18,13 +18,13 @@ find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
-message(${PROJECT_SOURCE_DIR})
-
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp)
 target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
 
-add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
-target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
-                                        ${OpenCV_LIBS})
+#add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
+#target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS})
+                                        
+add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_tb.cpp)
+target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${CERES_LIBRARIES} ${OpenCV_LIBS} )                                    

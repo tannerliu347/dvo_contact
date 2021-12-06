@@ -46,9 +46,10 @@ int main()
         std::cout << "Image load failed!" << std::endl;
         return -1;
     }
-
+    Eigen::Matrix3f intrinstic_mat { 
+        {}
+    }
     dvo::Intrinsic cam_intrinsic = new dvo::Intrinsic();
-    cam_intrinsic.
 
 
     size_t cam_width = 640;
