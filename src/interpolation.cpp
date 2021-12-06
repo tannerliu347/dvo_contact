@@ -9,8 +9,7 @@ float Interpolation::bilinearWithDepth(const cv::Mat& intensity, const cv::Mat& 
     const int x1 = x0 + 1;
     const int y1 = y0 + 1;
 
-    // TODO: commented for temp build req
-    // if(x1 >= intensity.cols || y1 >= intensity.rows) return Invalid;
+    if(x1 >= intensity.cols || y1 >= intensity.rows) return Invalid;
     
     const float x1_weight = x - x0;
     const float x0_weight = 1.0f - x1_weight;
@@ -44,9 +43,7 @@ float Interpolation::bilinearWithDepth(const cv::Mat& intensity, const cv::Mat& 
     if(sum > 0.0f) {
         val /= sum;
     } else {
-        val = 0;
-        // TODO: commented for temp build req
-        // val = Invalid;
+        val = Invalid;
     }
 }
 

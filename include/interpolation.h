@@ -1,10 +1,10 @@
 #pragma once
+#include "rgbd_image.h"
 
 #include <opencv2/opencv.hpp>
 
-namespace dvo {
 
-// static const float Invalid = std::numeric_limits<float>::quiet_NaN();
+namespace dvo {
 
 class Interpolation {
 public:    
