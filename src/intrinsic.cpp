@@ -2,6 +2,11 @@
 
 namespace dvo {
 
+Intrinsic::Intrinsic(float fx, float fy, float ox, float oy) {
+    data_ << fx, 0, ox,
+             0, fy, oy,
+             0,  0,  1;
+}
 
 Intrinsic::Intrinsic(const Intrinsic& other) : data_(other.data_) {}
 

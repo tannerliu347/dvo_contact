@@ -14,41 +14,42 @@ typedef Eigen::Transform<float,3, Eigen::Affine> AffineTransform;
 static const float Invalid = std::numeric_limits<float>::quiet_NaN();
 
 
-class PtIntensityDepth{
+struct PtIntensityDepth{
 public:
+    // PtIntensityDepth();
+    // ~PtIntensityDepth(){};
     Eigen::Vector4f getPointVec() {
         Eigen::Vector4f res;
-        res << x_, y_, z_, 0.0f;
+        res << x, y, z, 0.0f;
         return res;
     }
 
     Eigen::Vector2f getIntensityDepty() {
         Eigen::Vector2f res;
-        res << i_, d_;
+        res << i, d;
         return res;
     }
 
     Eigen::Vector2f getIntensityDeriv() {
         Eigen::Vector2f res;
-        res << idx_, idy_;
+        res << idx, idy;
         return res;
     }
 
     Eigen::Vector2f getDepthDeriv() {
         Eigen::Vector2f res;
-        res << ddx_, ddy_;
+        res << ddx, ddy;
         return res;
     }
 
     Vector8f getIntensityDepthAndDeriv() {
         Vector8f res;
-        res << i_, d_, idx_, idy_, ddx_, ddy_, time_interp_, 0.0f;
+        res << i, d, idx, idy, ddx, ddy, time_interp, 0.0f;
         return res;
     }
 
-private:
-    float x_, y_, z_;
-    float i_, d_, idx_, idy_, ddx_, ddy_, time_interp_;
+    float x, y, z;
+    float i, d, idx, idy, ddx, ddy, time_interp;
 };
 
 class RgbdImage;

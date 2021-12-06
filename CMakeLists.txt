@@ -20,11 +20,19 @@ find_package(Boost REQUIRED)
 
 message(${PROJECT_SOURCE_DIR})
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include
+                    ${PROJECT_SOURCE_DIR}/include/experiments)
 
-add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp)
+add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
+                                        ${PROJECT_SOURCE_DIR}/src/intrinsic.cpp
+                                        ${PROJECT_SOURCE_DIR}/src/interpolation.cpp)
 target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
+
+add_library(${PROJECT_NAME}_TUM_loader SHARED ${PROJECT_SOURCE_DIR}/src/experiments/TUM_loader.cpp)
+target_link_libraries(${PROJECT_NAME}_TUM_loader PUBLIC ${PROJECT_NAME}_rgbd
+                                                        ${OpenCV_LIBS})
 
 add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
 target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
-                                        ${OpenCV_LIBS})
+                                       ${PROJECT_NAME}_TUM_loader
+                                       ${OpenCV_LIBS})
