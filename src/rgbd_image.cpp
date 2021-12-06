@@ -1,5 +1,7 @@
-#include "rgbd_image.h"
 #include "interpolation.h"
+#include "rgbd_image.h"
+
+
 namespace dvo {
 
 // ------------------------------ RgbdCamera ------------------------------------------
@@ -152,13 +154,9 @@ RgbdImage::RgbdImage(const RgbdCamera& camera) :
     depth_requires_calculation_(true),
     pointcloud_requires_build_(true),
     width(0),
-    height(0)
-{
-}
+    height(0) {}
 
-RgbdImage::~RgbdImage()
-{
-}
+RgbdImage::~RgbdImage() {}
 
 const RgbdCamera& RgbdImage::camera() const
 {
@@ -327,7 +325,7 @@ void RgbdImage::warpIntensity(const AffineTransform& transformation, const Point
                               const Intrinsic& intrinsics, RgbdImage& result, PointCloud& transformed_pointcloud){
     
     // the following line is comment out because AffineTransform is already define as 3 floats 
-    // Eigen::Affine3f new_transformation = transformationd.cast<float>();
+    // Eigen::Affine3f new_transformation = transformation.cast<float>();
 
     cv::Mat warped_image(intensity.size(), intensity.type());
     cv::Mat warped_depth(depth.size(), depth.type());
@@ -374,7 +372,7 @@ void RgbdImage::warpIntensity(const AffineTransform& transformation, const Point
 }
 
 void RgbdImage::warpDepthForward(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result, cv::Mat_<cv::Vec3d>& cloud) {
-    // Eigen::Affine3d transformation_3d = transformation.cast<double>();
+    Eigen::Affine3d transformation_3d = transformation.cast<double>();
 
     bool identity = transformation.affine().isIdentity(1e-6);
     cloud = cv::Mat_<cv::Vec3d>(depth.size(), cv::Vec3d(0, 0, 0));
@@ -399,7 +397,7 @@ void RgbdImage::warpDepthForward(const AffineTransform& transformation, const In
 
             float depth = *depth_ptr;
             Eigen::Vector3d p3d((j - ox) * depth / fx, (i - oy) * depth / fy, depth);
-            Eigen::Vector3d p3d_transformed = transformation * p3d;
+            Eigen::Vector3d p3d_transformed = transformation_3d * p3d;
 
             float i_projected = static_cast<float>(p3d_transformed(0) * fx / p3d_transformed(2) + ox);
             float j_projected = static_cast<float>(p3d_transformed(1) * fy / p3d_transformed(2) + oy);
@@ -417,6 +415,7 @@ void RgbdImage::warpDepthForward(const AffineTransform& transformation, const In
 
 void RgbdImage::warpIntensityForward(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result, cv::Mat_<cv::Vec3d>& cloud)
 {
+    Eigen::Affine3d transformation_3d = transformation.cast<double>();
     bool identity = transformation.affine().isIdentity(1e-6);
     cloud = cv::Mat_<cv::Vec3d>(intensity.size(), cv::Vec3d(0, 0, 0));
     cv::Mat warped_image = cv::Mat::zeros(intensity.size(), intensity.type());
@@ -442,7 +441,7 @@ void RgbdImage::warpIntensityForward(const AffineTransform& transformation, cons
             
             float depth = *depth_ptr;
             Eigen::Vector3d p3d((j - ox) * depth / fx, (i - oy) * depth / fy, depth);
-            Eigen::Vector3d p3d_transformed = transformation * p3d;
+            Eigen::Vector3d p3d_transformed = transformation_3d * p3d;
 
             float i_projected = static_cast<float>(p3d_transformed(0) * fx / p3d_transformed(2) + ox);
             float j_projected = static_cast<float>(p3d_transformed(1) * fy / p3d_transformed(2) + oy);
