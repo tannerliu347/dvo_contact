@@ -86,16 +86,16 @@ target_link_libraries(${PROJECT_NAME}_point_selection PUBLIC ${OpenCV_LIBS}
                                                             ${Eigen3_LIBS}
                                                             ${Yaml_cpp_LIBRARY})
 
-add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
+# add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
                                         
 # add_executable(frontend_solver ${PROJECT_SOURCE_DIR}/src/FrontendSolver.cpp)
 # target_link_libraries( frontend_solver PUBLIC Eigen3::Eigen ${PROJECT_NAME}_rgbd ${PROJECT_NAME}_intrinsic ${CERES_LIBRARIES} ${OpenCV_LIBS} )                                    
-target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
-                                       ${PROJECT_NAME}_TUM_loader
-                                       ${PROJECT_NAME}_point_selection
-                                       ${OpenCV_LIBS}
-                                       ${Yaml_cpp_LIBRARY})
-                                       ${Pangolin_LIBRARIES})
+# target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
+#                                        ${PROJECT_NAME}_TUM_loader
+#                                        ${PROJECT_NAME}_point_selection
+#                                        ${OpenCV_LIBS}
+#                                        ${Yaml_cpp_LIBRARY}
+#                                        ${Pangolin_LIBRARIES})
                                     #    pango_display
                                     #    pango_scene
                                     #    /usr/local/lib/libpango_windowing.so)

@@ -3,9 +3,12 @@
 #include <opencv2/highgui.hpp>
 
 
-// #include <filesystem>
+
 #include <iostream>
 #include <vector>
+#include <experimental/filesystem>
+#include <string>
+#include <unistd.h>
 
 #include "rgbd_image.h"
 
@@ -18,6 +21,7 @@
 
 using namespace cv;
 using namespace std;
+
 // namespace fs = std::filesystem;
 // using namespace cv::xfeatures2d;
 
@@ -33,17 +37,55 @@ void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descript
 
 Mat read_image(const char* filename)
 {
-    std::string image_path = filename;
-    Mat img = imread(image_path, IMREAD_COLOR);
+    std::string cwd = get_current_dir_name();
+    std::string image_path =  cwd + "/../src/experiments/test_img/" + std::string(filename);
+    cout << "DEBUG file dir = " << image_path << endl;
+    Mat img = cv::imread(image_path, IMREAD_COLOR);
     return img;
 }
 
+void keep_points(float discard_precent, size_t width, size_t height, const vector<KeyPoint>& in_kps, vector<Point2i>& out_kps) 
+{
+    float dw = discard_precent * (float) width; // size of discarding width
+    float dh = discard_precent * (float) height; // size of discarding height
+    
+    //debug 
+    cout << "DEBUG dw, dh = " << dw << dh << endl; 
+    
+    int w_lower, w_upper, h_lower, h_upper;
+    w_lower = dw;
+    w_upper = width - dw;
+    h_lower = dh ;
+    h_upper = height - dh;
+
+    cout << "DEBUG dw, width-dw = " << w_lower << " "<< w_upper << endl;
+    cout << "DEBUG dh, height-dh = " << h_lower << " " << h_upper << endl;
+    //int dummy_counter = 0;
+    for(int i = 0; i < in_kps.size(); i++)
+    {   
+        Point2i uv = in_kps[i].pt;
+        //debug
+        // cout << "DEBUG if a,b are true  " << a << "  " << b << endl;
+        
+        if (((w_lower < uv.x) && (uv.x < w_upper)) && ((h_lower < uv.y) && (uv.y < h_upper)))
+        {
+            
+            out_kps.push_back(uv);
+            //dummy_counter++;
+        }
+    }
+    //cout<<"DEBUG dummy counter " << dummy_counter <<endl;
+    return  ;
+}
 
 
 int main()
 {
-    Mat img1_cvmat = read_image("../dvo_contact/experiments/test_img/img1.png");
-    Mat img2_cvmat = read_image("../dvo_contact/experiments/test_img/img1.png");
+    string cwd = get_current_dir_name();
+    cout << "cwd = " << cwd <<endl;
+    
+    Mat img1_cvmat = read_image("img1.png");
+    Mat img2_cvmat = read_image("img1.png");
     if(img1_cvmat.empty() || img2_cvmat.empty())
     {
         std::cout << "Image load failed!" << std::endl;
@@ -76,10 +118,34 @@ int main()
     Mat des;
     extract_orb_features(img1_cvmat, kps, des);
 
-    cout << "DEBUG, check keypoints " << kps[0].pt <<endl;
+    vector<Point2i> kept_kps;
+    keep_points(0.4, cam_width, cam_height, kps, kept_kps);
 
+    cout << "num of kept points = " << kept_kps.size() << endl;
+    cout << "num of original points = " << kps.size() << endl;
+    
+    Mat im_display = img1_cvmat;
+    
+    int radius = 5;
+    cv:Scalar GREEN(0, 255, 0);
+    cv::Scalar BLUE(255, 0, 0);
+    int thicknessCircle = 2;
+    
+    for (int i = 0; i < kps.size(); i++)
+    {
+        cv::circle(im_display, kps[i].pt, radius, BLUE, thicknessCircle);
+    }
 
+    for (int i = 0; i < kept_kps.size(); i++) 
+    {
+        cv::circle(im_display, kept_kps[i], radius, GREEN, thicknessCircle);
+    }
+
+    //debug
+    //bool a = (20<30<40);
+    //cout<< "DEBUG " << a << endl;
     
-    
+    imwrite(cwd+"/../src/experiments/features.png", im_display);
+
     return 0;
 }
