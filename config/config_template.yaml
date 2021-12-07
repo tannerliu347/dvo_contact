@@ -1,0 +1,6 @@
+# This is a template for config.yaml
+# You can copy the following contents to a file named as "config.yaml"
+# Our program will read the contents from that file instead of this one
+
+dvo:
+  image_load_path: "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/"

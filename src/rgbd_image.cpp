@@ -50,7 +50,17 @@ bool RgbdCamera::hasSamesize(const cv::Mat& img) const {
     return img.cols == width_ && img.rows == height_;
 }
 
-// TODO:missing build point cloud
+void RgbdCamera::buildPointCloud(const cv::Mat &depth, PointCloud& pointcloud) const{
+    
+    assert(hasSamesize(depth));
+    pointcloud.resize(Eigen::NoChange, width_ * height_);
+    const float* depth_ptr = depth.ptr<float>();
+    for (int index = 0; index < width_ * height_; index++, depth_ptr++) {
+        pointcloud.col(index) = pointcloud_template_.col(index) * (*depth_ptr);
+        pointcloud(3, index) = 1.0;
+    }
+
+}
 // ------------------------------ RgbdCamera ------------------------------------------
 
 

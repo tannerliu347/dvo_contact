@@ -9,6 +9,9 @@ class Intrinsic {
 public:
     Intrinsic(); 
     Intrinsic(Eigen::Matrix3f cam_data);
+
+    Intrinsic(float fx, float fy, float ox, float oy);
+
     Intrinsic(const Intrinsic& other);
 
     float fx() const;
