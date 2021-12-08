@@ -115,7 +115,9 @@ struct PHOTOMETRIC_COST_Eigen
     const RGBDImage& _x, _y;    // x,y数据
 }; */
 
-Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::RgbdImage& img2, Eigen::Matrix4d initial_guess)
+
+//Initial guess is a 7 parameter representation of transformation (quaternion, translation) double [7]
+Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::RgbdImage& img2, const double[7] & initial_guess)
 {   
     img1.buildPointCloud();
     img1.selectFeaturePoints(); // (place holder) build feature points function
@@ -149,9 +151,6 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
         feature_intensity(i) = all_points[i].getIntensityDepty()(0);
     }
     
-
-
-    
     /*
     template<typename T>
     Eigen::Matrix<T, 4, Eigen::Dynamic> feature_points;
@@ -183,7 +182,7 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
     problem.AddResidualBlock (     // 向问题中添加误差项
     // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
         new ceres::AutoDiffCostFunction<PhotometricError, 1, 7> ( 
-            new PhotometricError ( x_data[i], y_data[i] )
+            new PhotometricError ( feature_pc, feature_intensity, img2)
         ),
         nullptr,            // 核函数，这里不使用，为空
         abc                 // 待估计参数
@@ -204,7 +203,7 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
 
     // 输出结果
     cout<<summary.BriefReport() <<endl;
-    cout<<"estimated a,b,c = ";
-    for ( auto a:abc ) cout<<a<<" ";
+    cout<<"estimated transform";
+    for ( auto t:initial_guess ) cout<<a<<" ";
     cout<<endl; 
 }

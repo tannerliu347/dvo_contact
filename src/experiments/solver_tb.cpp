@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "rgbd_image.h"
+#include "FrontendSolver.h"
 
 // 1341839846.7712 -2.3142 -2.2665 1.9327 0.9424 0.0850 -0.0028 -0.3235
 
@@ -99,8 +100,7 @@ template<typename T>
 void keypoint_plotter(Mat& img, vector<T>& points,  
                                 char color = 'g', 
                                 int radius = 5,
-                                int thickness = 2,
-                                bool cv_keypoints = false
+                                int thickness = 2
                                 )
 {
     
@@ -117,18 +117,11 @@ void keypoint_plotter(Mat& img, vector<T>& points,
     }
     
     string cwd = get_current_dir_name();
-    if (cv_keypoints) {
-        for (int i = 0; i < points.size(); i++)
-        {
-            cv::circle(img, points[i].pt, radius, plot_color, thickness);
-        }
+    
+    for (int i = 0; i < points.size(); i++) {
+    cv::circle(img, points[i], radius, plot_color, thickness);
     }
-    else 
-    {
-        for (int i = 0; i < points.size(); i++) {
-        cv::circle(img, points[i], radius, plot_color, thickness);
-        }
-    }
+    
     // imwrite(cwd + relative_path, img);
 }
 
@@ -181,21 +174,31 @@ int main()
     img2.depth = img2_depth;
 
 
-    img1.initialize()
+    img1.initialize();
+    img2.initialize();
 
+    
     vector<KeyPoint> kps;
     Mat des;
     extract_orb_features(img1_cvmat, kps, des);
 
     vector<Point2i> kept_kps;
-    keep_points(0.4, cam_width, cam_height, kps, kept_kps);
+    keep_points(0.2, cam_width, cam_height, kps, kept_kps);
 
     cout << "num of kept points = " << kept_kps.size() << endl;
     cout << "num of original points = " << kps.size() << endl;
     
     Mat im_display = img1_cvmat;
     
-    keypoint_plotter(im_display, kps, 'b', 5, 2, true);
+    std::vector<cv::Point2i> kps_vec;
+    for (int i = 0; i < kps.size(); i++) 
+    {
+        kps_vec.push_back(kps[i].pt);
+    }
+
+    std::cout << "DEBUG num of kps_vec " << kps_vec.size() << std::endl;
+
+    keypoint_plotter(im_display, kps_vec, 'b');
     keypoint_plotter(im_display, kept_kps, 'g');
 
     //debug
@@ -203,6 +206,9 @@ int main()
     //cout<< "DEBUG " << a << endl;
     
     imwrite(cwd+"/../src/experiments/features.png", im_display);
+    std::cout << "Write image completed" <<std::endl;
+
+
 
     return 0;
 }

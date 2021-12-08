@@ -88,8 +88,8 @@ target_link_libraries(${PROJECT_NAME}_point_selection PUBLIC ${OpenCV_LIBS}
 
 # add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
                                         
-add_executable(frontend_solver ${PROJECT_SOURCE_DIR}/src/FrontendSolver.cpp)
-target_link_libraries( frontend_solver PUBLIC Eigen3::Eigen ${PROJECT_NAME}_rgbd ${PROJECT_NAME}_intrinsic ${CERES_LIBRARIES} ${OpenCV_LIBS} )                                    
+# add_executable(frontend_solver ${PROJECT_SOURCE_DIR}/src/FrontendSolver.cpp)
+# target_link_libraries( frontend_solver PUBLIC Eigen3::Eigen ${PROJECT_NAME}_rgbd ${PROJECT_NAME}_intrinsic ${CERES_LIBRARIES} ${OpenCV_LIBS} )                                    
 # target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
 #                                        ${PROJECT_NAME}_TUM_loader
 #                                        ${PROJECT_NAME}_point_selection
@@ -100,5 +100,5 @@ target_link_libraries( frontend_solver PUBLIC Eigen3::Eigen ${PROJECT_NAME}_rgbd
                                     #    pango_scene
                                     #    /usr/local/lib/libpango_windowing.so)
 
-#add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_tb.cpp)
-#target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${PROJECT_NAME}_point_selection ${CERES_LIBRARIES} ${OpenCV_LIBS} )    
+add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_tb.cpp)
+target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${PROJECT_NAME}_point_selection ${CERES_LIBRARIES} ${OpenCV_LIBS} )    
