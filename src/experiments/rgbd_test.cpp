@@ -10,7 +10,7 @@
 #include <pangolin/scene/scenehandler.h>
 #include <iostream>
 
-int main() {
+void rgbd_camera_test() {
     char resolved_path[PATH_MAX];
     realpath("../", resolved_path);
     std::cout << resolved_path << std::endl;
@@ -20,18 +20,6 @@ int main() {
                                                                 : "/home/tingjun/code/dvo_contact/dataset/";
 
     dvo::TUMLoader tum_loader(image_load_path);
-    // auto cur = tum_loader.getNext();
-    while (tum_loader.hasNext()) {
-        auto cur = tum_loader.getNext();
-        cv::imshow("gray", cur.first[0]);
-        cv::imshow("dept", cur.first[1]);
-        std::cout << cur.second << std::endl;
-        cv::waitKey(10);
-    }
-}
-
-void rgbd_camera_test() {
-    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
     auto curImgs = tum_loader.getNext().first;
     dvo::Intrinsic intrins = tum_loader.getIntrinsic();
     std::cout << "Camera fx:\n";

@@ -11,8 +11,8 @@ class PtSelectionVerify
 public:
   virtual ~PtSelectionVerify() {}
   // (x, y): point position in image; z: depth; i: intensity;
-  // didx (didy): intensity gradient along x (y);
-  // dzdx (didy): intensity gradient along x (y);
+  // idx (idy): intensity gradient along x (y);
+  // ddx (ddy): intensity gradient along x (y);
   virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const = 0;
 };
 
@@ -22,8 +22,8 @@ class PtVerify : public PtSelectionVerify
 public:
   virtual ~PtVerify() {}
   // (x, y): point position in image; z: depth; i: intensity;
-  // didx (didy): intensity gradient along x (y);
-  // dzdx (didy): intensity gradient along x (y);
+  // idx (idy): intensity gradient along x (y);
+  // ddx (ddy): intensity gradient along x (y);
   virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const
   {
     return 1;
@@ -46,8 +46,8 @@ public:
   virtual ~PtAndGradVerify() {}
 
   // (x, y): point position in image; z: depth; i: intensity;
-  // didx (didy): intensity gradient along x (y);
-  // dzdx (didy): intensity gradient along x (y);
+  // idx (idy): intensity gradient along x (y);
+  // ddx (ddy): intensity gradient along x (y);
   virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const
   {
     return (std::abs(idx) > intensity_threshold || std::abs(idy) > intensity_threshold || std::abs(ddx) > depth_threshold ||  std::abs(ddy) > depth_threshold);
