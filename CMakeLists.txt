@@ -20,8 +20,6 @@ find_package(Boost REQUIRED)
 find_package(Pangolin 0.4 REQUIRED)
 
 # Yaml:
-# find_package(  yaml-cpp REQUIRED )
-# include_directories(${YAML_CPP_INCLUDE_DIRS})
 find_library(Yaml_cpp_LIBRARY yaml-cpp /usr/local/include/yaml-cpp/)
 message("YAML_CPP_INCLUDE_DIR: " ${Yaml_cpp_LIBRARY})
 
@@ -63,36 +61,23 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(YAMLCPP DEFAULT_MSG YAMLCPP_INCLUDE_DIR YAMLCP
 mark_as_advanced(YAMLCPP_INCLUDE_DIR YAMLCPP_LIBRARY)
 
 
-message(${PROJECT_SOURCE_DIR})
-
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/include/experiments
                     ${Pangolin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/intrinsic.cpp
-                                        ${PROJECT_SOURCE_DIR}/src/interpolation.cpp)
-target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS}
-                                                ${Yaml_cpp_LIBRARY})
+                                        ${PROJECT_SOURCE_DIR}/src/interpolation.cpp
+                                        ${PROJECT_SOURCE_DIR}/src/point_selection.cpp)
+target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
 
 add_library(${PROJECT_NAME}_TUM_loader SHARED ${PROJECT_SOURCE_DIR}/src/experiments/TUM_loader.cpp)
 target_link_libraries(${PROJECT_NAME}_TUM_loader PUBLIC ${PROJECT_NAME}_rgbd
-                                                        ${OpenCV_LIBS}
-                                                        ${Yaml_cpp_LIBRARY})
-
-add_library(${PROJECT_NAME}_point_selection SHARED ${PROJECT_SOURCE_DIR}/src/point_selection.cpp)
-target_link_libraries(${PROJECT_NAME}_point_selection PUBLIC ${OpenCV_LIBS}
-                                                            ${PROJECT_NAME}_rgbd
-                                                            ${Eigen3_LIBS}
-                                                            ${Yaml_cpp_LIBRARY})
+                                                        ${OpenCV_LIBS})
 
 add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
 target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
                                        ${PROJECT_NAME}_TUM_loader
-                                       ${PROJECT_NAME}_point_selection
                                        ${OpenCV_LIBS}
-                                       ${Yaml_cpp_LIBRARY})
+                                       ${Yaml_cpp_LIBRARY}
                                        ${Pangolin_LIBRARIES})
-                                    #    pango_display
-                                    #    pango_scene
-                                    #    /usr/local/lib/libpango_windowing.so)

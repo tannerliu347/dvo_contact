@@ -268,19 +268,10 @@ void RgbdImage::calculateDerivatives() {
 // TODO: please check again to make sure this function is written correctly to combine RgbdCamera::buildPointCould() and RgbdImage::buildPointCould()
 void RgbdImage::buildPointCloud() {
     if(!pointcloud_requires_build_) return;
+
     assert(hasDepth());
-    assert(depth.rows == height && depth.cols == width);
 
-    point_cloud.resize(Eigen::NoChange, width * height);
-    const float* depth_ptr = depth.ptr<float>();
-    int idx = 0;
-
-    for(size_t i = 0; i < height; i++) {
-        for(size_t j = 0; j < width; j++, depth_ptr++, idx++) {
-            point_cloud.col(idx) = point_cloud.col(idx) * (*depth_ptr);
-            point_cloud(3, idx) = 1.0;
-        }
-    }
+    camera_.buildPointCloud(depth, point_cloud);
 
     pointcloud_requires_build_ = false;
 }
@@ -467,6 +458,6 @@ void RgbdImage::warpIntensityForward(const AffineTransform& transformation, cons
     result.depth = depth;
     result.initialize();
 }
-// ----------------------------- CameraPyramid ----------------------------------------
+// ----------------------------- RgbdImage ----------------------------------------
 
 } //namespace dvo

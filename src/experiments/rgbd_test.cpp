@@ -10,28 +10,17 @@
 #include <pangolin/scene/scenehandler.h>
 #include <iostream>
 
-int main() {
-    char resolved_path[PATH_MAX];
-    realpath("../", resolved_path);
-    std::cout << resolved_path << std::endl;
-    YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
-    
-    std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
-                                                                : "/home/tingjun/code/dvo_contact/dataset/";
-
-    dvo::TUMLoader tum_loader(image_load_path);
-    // auto cur = tum_loader.getNext();
+void TUM_loader_test() {
+    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+    auto cur = tum_loader.getNext();
     while (tum_loader.hasNext()) {
-        auto cur = tum_loader.getNext();
-        cv::imshow("gray", cur.first[0]);
-        cv::imshow("dept", cur.first[1]);
         std::cout << cur.second << std::endl;
         cv::waitKey(10);
     }
 }
 
-void rgbd_camera_test() {
-    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+void rgbd_camera_test(std::string file_path) {
+    dvo::TUMLoader tum_loader(file_path);
     auto curImgs = tum_loader.getNext().first;
     dvo::Intrinsic intrins = tum_loader.getIntrinsic();
     std::cout << "Camera fx:\n";
@@ -75,7 +64,14 @@ void rgbd_camera_test() {
 
 
 int main() {
+    char resolved_path[PATH_MAX];
+    realpath("../", resolved_path);
+    std::cout << resolved_path << std::endl;
+    YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
+    
+    std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
+                                                                : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
     // TUM_loader_test();
-    rgbd_camera_test();
+    rgbd_camera_test(image_load_path);
     return 0;
 }
