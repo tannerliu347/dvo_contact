@@ -36,17 +36,6 @@ void Convert7ParameterQuaternionRepresentationIntoMatrix(const T* X, T* XM){
 
 }
 
-template <typename T>
-Eigen::Matrix<T, 3, 3> construct_intrinsic_matrix(const dvo::Intrinsic& intrinsic_dvo){
-	Eigen::Matrix<T, 3, 3> intrinsic_matrix;
-	intrinsic_matrix(0, 0) = T(intrinsic_dvo.fx());
-	intrinsic_matrix(1, 1) = T(intrinsic_dvo.fy());
-	intrinsic_matrix(0, 2) = T(intrinsic_dvo.ox());
-	intrinsic_matrix(1, 2) = T(intrinsic_dvo.oy());	
-	intrinsic_matrix(2, 2) = T(1);
-	return intrinsic_matrix;
-}
-
 /*
 float bilinearWithDepth(const MatrixXT& intensity, const MatrixXT& depth, const float& x, const float& y, const float& z) {
     const int x0 = static_cast<int>(std::floor(x));
@@ -133,7 +122,7 @@ Eigen::Matrix<T, Eigen::Dynamic, 1> comp_all_intensities(const Eigen::Matrix<T, 
     int N = pixels_img2.col();
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> intensities(N,1);
     for(int col=0; col<N; col++){
-        intensities(col,1) = bilinearWithoutDepth(img2_intensity, pixels_img2(0, col), pixels_img2(1, col));
+        intensities(col, 0) = bilinearWithoutDepth(img2_intensity, pixels_img2(0, col), pixels_img2(1, col));
     }
     return intensities;
 }

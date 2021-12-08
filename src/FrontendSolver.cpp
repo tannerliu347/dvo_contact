@@ -3,19 +3,11 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <ceres/ceres.h>
+#include "ceres/rotation.h"
 #include <chrono>
 #include <vector>
 #include "utils.cpp"
 using namespace std;
-/*
-class FrontendSolver {
-private:
-    dvo::Intrinsic intrinsic_;
-public:
-    FrontendSolver(const dvo::Intrinsic & intrinsic);
-    Eigen::Matrix4d solve (const RGBDImage& img1, const RGBDImage& img2, Eigen::Matrix initial_guess=identity());
-};
-*/
 
 /*
 class ReprojectionError {
@@ -47,14 +39,13 @@ class ReprojectionError {
 };
 */
 
-
 class PhotometricError {
 
  public:
   //
   //pc_1: point cloud of selected feature points, eigen matrix of (4 x n) each column: [x, y, z, 1]
   PhotometricError(const dvo::PointCloud& pc1, const Eigen::VectorXd& img1_intensity, const dvo::RgbdImage& img2) : pc1_ (pc1), 
-                                                                           img1_intensity_ (img1_intensity.cast<double>()),
+                                                                           img1_intensity_ (img1_intensity),
                                                                            img2_(img2),
                                                                            img_width_(img2.width),
                                                                            img_height_(img2.height),
@@ -68,16 +59,17 @@ class PhotometricError {
     int N = pc1_.cols(); //number of selected points
     L transform[16];
     //transform quaternion-trans parametrization to matrix 
-    Convert7ParameterQuaternionRepresentationIntoMatrix(quat_trans, transform);
+    Convert7ParameterQuaternionRepresentationIntoMatrix<L>(quat_trans, transform);
     //TODO, verify T[16] to Eigen matrix conversion
-    auto extrinsics = Eigen::Map<Eigen::Matrix<L, 4, 4, Eigen::RowMajor>> (transform);
+    //Extrinsics: 4 x 4 matrix
+    Eigen::Map<const Eigen::Matrix<L, 4, 4, Eigen::RowMajor>> extrinsics (transform);
     //transform point cloud to camera 2 image plane through extrinsics and intrinsics
-    const Eigen::Matrix<L, 2, Eigen::Dynamic> pixels_img2  = (intrinsics_cam2_.cast<L>() * (extrinsics * pc1_.cast<L>()).hnormalized()).hnormalized();
+    const Eigen::Matrix<L, 2, Eigen::Dynamic> pixels_img2  = (intrinsics_cam2_.cast<L>() * (extrinsics * pc1_.cast<L>()).colwise().hnormalized()).colwise().hnormalized();
     //TODO: check pixels_img2 are in img2
     //Get intensity in image 2
-    
     auto intensity_in_img2 = comp_all_intensities(pixels_img2 , img2_intensity_);
-    return (intensity_in_img2 - img1_intensity_).norm();
+    residual[0] = (intensity_in_img2 - img1_intensity_.cast<L>()).norm();
+    return true;
   }
 
  private:
@@ -132,8 +124,8 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
     // Eigen::Matrix<T, 1, Eigen::Dynamic> feature_points_idx = img1.getFeaturePointsIdx(); // place holder methods
     
     // receive feature pointers
-    auto feature_points_starting_pointer = img1.getFeaturePointsStart() // place holder method
-    auto feature_points_ending_pointer = img1.getFeaturePointEnd() //place holder method 
+    auto feature_points_starting_pointer = img1.getFeaturePointsStart(); // place holder method
+    auto feature_points_ending_pointer = img1.getFeaturePointEnd(); //place holder method 
     
     // initialize space for getting out all points
     std::vector<dvo::PtIntensityDepth> all_points;
@@ -153,8 +145,8 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
     
     for (size_t i = 0; all_points.size(); i++) 
     {
-        PointCloud.col(i) = all_points[i].getPointVec();
-        feature_intensity(i) = all_points[i].getIntensityDepty()(0)
+        feature_pc.col(i) = all_points[i].getPointVec();
+        feature_intensity(i) = all_points[i].getIntensityDepty()(0);
     }
     
 

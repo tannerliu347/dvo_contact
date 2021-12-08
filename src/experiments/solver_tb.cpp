@@ -1,3 +1,4 @@
+
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
@@ -28,20 +29,36 @@ using namespace std;
 const int MAX_FEATURES = 500;
 const float GOOD_MATCH_PERCENT = 0.15f;
 
-void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1)
+// define color space
+const cv::Scalar GREEN(0, 255, 0);
+const cv::Scalar BLUE(255, 0, 0);
+const cv::Scalar RED(0, 0, 255);
+const cv::Scalar YELLOW(0, 255, 255);
+const cv::Scalar MAGENTA(255, 0, 255);
+const cv::Scalar CYAN(255, 255, 0);
+
+
+void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1) 
 {
     Ptr<ORB> orb = ORB::create(MAX_FEATURES);
     orb->detectAndCompute(img1, Mat(), keypoints1, descriptors1);
 }
 
-
-Mat read_image(const char* filename)
+void read_image(const char* filename, Mat& canvas) 
 {
     std::string cwd = get_current_dir_name();
     std::string image_path =  cwd + "/../src/experiments/test_img/" + std::string(filename);
-    cout << "DEBUG file dir = " << image_path << endl;
-    Mat img = cv::imread(image_path, IMREAD_COLOR);
-    return img;
+    // cout << "DEBUG file dir = " << image_path << endl;
+    canvas = cv::imread(image_path, IMREAD_COLOR);
+    return ;
+}
+
+void read_depth(const char* filename, Mat& canvas) 
+{
+    std::string cwd = get_current_dir_name();
+    std::string image_path =  cwd + "/../src/experiments/test_img/" + std::string(filename);
+    canvas = cv::imread(image_path, IMREAD_GRAYSCALE);
+    return ; 
 }
 
 void keep_points(float discard_precent, size_t width, size_t height, const vector<KeyPoint>& in_kps, vector<Point2i>& out_kps) 
@@ -61,13 +78,13 @@ void keep_points(float discard_precent, size_t width, size_t height, const vecto
     cout << "DEBUG dw, width-dw = " << w_lower << " "<< w_upper << endl;
     cout << "DEBUG dh, height-dh = " << h_lower << " " << h_upper << endl;
     //int dummy_counter = 0;
-    for(int i = 0; i < in_kps.size(); i++)
+    for(int i = 0; i < in_kps.size(); i++) 
     {   
         Point2i uv = in_kps[i].pt;
         //debug
         // cout << "DEBUG if a,b are true  " << a << "  " << b << endl;
         
-        if (((w_lower < uv.x) && (uv.x < w_upper)) && ((h_lower < uv.y) && (uv.y < h_upper)))
+        if (((w_lower < uv.x) && (uv.x < w_upper)) && ((h_lower < uv.y) && (uv.y < h_upper))) 
         {
             
             out_kps.push_back(uv);
@@ -78,15 +95,60 @@ void keep_points(float discard_precent, size_t width, size_t height, const vecto
     return  ;
 }
 
+template<typename T>
+void keypoint_plotter(Mat& img, vector<T>& points,  
+                                char color = 'g', 
+                                int radius = 5,
+                                int thickness = 2,
+                                bool cv_keypoints = false
+                                )
+{
+    
+    cv::Scalar plot_color;
+    switch (color)
+    {
+    case 'g': plot_color = GREEN;   break;
+    case 'b': plot_color = BLUE;    break;
+    case 'r': plot_color = RED;     break;
+    case 'c': plot_color = CYAN;    break;
+    case 'y': plot_color = YELLOW;  break;
+    case 'm': plot_color = MAGENTA; break;
+    default:  plot_color = GREEN;   break;
+    }
+    
+    string cwd = get_current_dir_name();
+    if (cv_keypoints) {
+        for (int i = 0; i < points.size(); i++)
+        {
+            cv::circle(img, points[i].pt, radius, plot_color, thickness);
+        }
+    }
+    else 
+    {
+        for (int i = 0; i < points.size(); i++) {
+        cv::circle(img, points[i], radius, plot_color, thickness);
+        }
+    }
+    // imwrite(cwd + relative_path, img);
+}
 
 int main()
 {
     string cwd = get_current_dir_name();
     cout << "cwd = " << cwd <<endl;
     
-    Mat img1_cvmat = read_image("img1.png");
-    Mat img2_cvmat = read_image("img1.png");
-    if(img1_cvmat.empty() || img2_cvmat.empty())
+    // read rgb image
+    Mat img1_cvmat, img2_cvmat;
+    read_image("img1.png", img1_cvmat);
+    read_image("img2.png", img2_cvmat);
+
+    // read depth image
+    Mat img1_depth, img2_depth;
+    read_depth("img1_depth.png", img1_depth);
+    read_depth("img2_depth.png", img2_depth);
+
+
+    if(img1_cvmat.empty() || img2_cvmat.empty() || img1_depth.empty() || img2_depth.empty())
     {
         std::cout << "Image load failed!" << std::endl;
         return -1;
@@ -112,7 +174,14 @@ int main()
     dvo::RgbdImage img1(camera);
     dvo::RgbdImage img2(camera);
 
-    img1.intensity = img1_cvmat;
+    img1.rgb = img1_cvmat;
+    img1.depth = img1_depth;
+
+    img2.rgb = img2_cvmat;
+    img2.depth = img2_depth;
+
+
+    img1.initialize()
 
     vector<KeyPoint> kps;
     Mat des;
@@ -126,20 +195,8 @@ int main()
     
     Mat im_display = img1_cvmat;
     
-    int radius = 5;
-    cv:Scalar GREEN(0, 255, 0);
-    cv::Scalar BLUE(255, 0, 0);
-    int thicknessCircle = 2;
-    
-    for (int i = 0; i < kps.size(); i++)
-    {
-        cv::circle(im_display, kps[i].pt, radius, BLUE, thicknessCircle);
-    }
-
-    for (int i = 0; i < kept_kps.size(); i++) 
-    {
-        cv::circle(im_display, kept_kps[i], radius, GREEN, thicknessCircle);
-    }
+    keypoint_plotter(im_display, kps, 'b', 5, 2, true);
+    keypoint_plotter(im_display, kept_kps, 'g');
 
     //debug
     //bool a = (20<30<40);
