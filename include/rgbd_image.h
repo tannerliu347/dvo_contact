@@ -9,7 +9,7 @@
 namespace dvo {
 
 typedef Eigen::Matrix<float, 8, 1> Vector8f;
-typedef Eigen::Matrix<float, 4, Eigen::Dynamic, Eigen::ColMajor> PointCloud;
+typedef Eigen::Matrix<float, 4, Eigen::Dynamic, Eigen::ColMajor> PointCloud; 
 typedef Eigen::Transform<float,3, Eigen::Affine> AffineTransform;
 static const float Invalid = std::numeric_limits<float>::quiet_NaN();
 

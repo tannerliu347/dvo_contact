@@ -66,7 +66,8 @@ class PhotometricError {
     //transform point cloud to camera 2 image plane through extrinsics and intrinsics
     const Eigen::Matrix<L, 2, Eigen::Dynamic> pixels_img2  = (intrinsics_cam2_.cast<L>() * (extrinsics * pc1_.cast<L>()).colwise().hnormalized()).colwise().hnormalized();
     //TODO: check pixels_img2 are in img2
-    //Get intensity in image 2
+    check_pixels_in_img(pixels_img2, img_width_, img_height_);
+    //Check pixels in image and Get intensity in image 2
     auto intensity_in_img2 = comp_all_intensities(pixels_img2 , img2_intensity_);
     residual[0] = (intensity_in_img2 - img1_intensity_.cast<L>()).norm();
     return true;
@@ -117,17 +118,21 @@ struct PHOTOMETRIC_COST_Eigen
 
 
 //Initial guess is a 7 parameter representation of transformation (quaternion, translation) double [7]
-Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::RgbdImage& img2, const double[7] & initial_guess)
+Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::RgbdImage& img2, const double initial_guess[7])
 {   
-    img1.buildPointCloud();
-    img1.selectFeaturePoints(); // (place holder) build feature points function
+    
+    // img1.buildPointCloud();
+    dvo::PointCloud img1_pc;
+    img1.camera.buildPointCloud(img1.depth, img1_pc);
+
+    //img1.PointSelection(); // (place holder) build feature points function
     
     // template<typename T>
     // Eigen::Matrix<T, 1, Eigen::Dynamic> feature_points_idx = img1.getFeaturePointsIdx(); // place holder methods
     
     // receive feature pointers
-    auto feature_points_starting_pointer = img1.getFeaturePointsStart(); // place holder method
-    auto feature_points_ending_pointer = img1.getFeaturePointEnd(); //place holder method 
+    //auto feature_points_starting_pointer = img1.getFeaturePointsStart(); // place holder method
+    //auto feature_points_ending_pointer = img1.getFeaturePointEnd(); //place holder method 
     
     // initialize space for getting out all points
     std::vector<dvo::PtIntensityDepth> all_points;
@@ -178,14 +183,15 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
     */
     // 构建最小二乘问题
     ceres::Problem problem;
-    
+    double transform[7];
+    std::copy = stdinitial_guess; 
     problem.AddResidualBlock (     // 向问题中添加误差项
     // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
         new ceres::AutoDiffCostFunction<PhotometricError, 1, 7> ( 
             new PhotometricError ( feature_pc, feature_intensity, img2)
         ),
         nullptr,            // 核函数，这里不使用，为空
-        abc                 // 待估计参数
+        transform                 // 待估计参数
     );
 
 
@@ -204,6 +210,6 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
     // 输出结果
     cout<<summary.BriefReport() <<endl;
     cout<<"estimated transform";
-    for ( auto t:initial_guess ) cout<<a<<" ";
+    for ( auto t:transform ) cout<< t <<" ";
     cout<<endl; 
 }

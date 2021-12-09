@@ -119,10 +119,21 @@ T bilinearWithoutDepth(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& i
 
 template <typename T>
 Eigen::Matrix<T, Eigen::Dynamic, 1> comp_all_intensities(const Eigen::Matrix<T, 2, Eigen::Dynamic> & pixels_img2 , const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& img2_intensity ){
-    int N = pixels_img2.col();
+    int N = pixels_img2.cols();
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> intensities(N,1);
     for(int col=0; col<N; col++){
         intensities(col, 0) = bilinearWithoutDepth(img2_intensity, pixels_img2(0, col), pixels_img2(1, col));
     }
     return intensities;
+}
+
+template <typename T>
+bool check_pixels_in_img(const Eigen::Matrix<T, 2, Eigen::Dynamic>& pixels_img2, int width, int height){
+    for(int i = 0; i < pixels_img2.cols(); i++){
+        if(pixels_img2(0, i) >= width || pixels_img2(1, i) >= height){
+            std::cout << "intensity query out of range\n";
+            return false;
+        }
+    }
+    return true;
 }
