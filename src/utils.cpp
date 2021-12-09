@@ -1,13 +1,15 @@
 #include <ceres/ceres.h>
 #include <eigen3/Eigen/Core>
 #include "rgbd_image.h"
-
+#include  <ceres/jet.h>
 /*
 template <typename T>
 using MatrixXT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 template <typename T>
 using Matrix3T = Eigen::Matrix<T, 3, 3>;
 */
+
+// X: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
 template <typename T>
 void Convert7ParameterQuaternionRepresentationIntoMatrix(const T* X, T* XM){
 	T RX[9];
@@ -84,8 +86,10 @@ float bilinearWithDepth(const MatrixXT& intensity, const MatrixXT& depth, const 
 
 template <typename T>
 T bilinearWithoutDepth(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& intensity, const T& x, const T& y) {
-    const int x0 = static_cast<int>(std::floor(x));
-    const int y0 = static_cast<int>(std::floor(y));
+    //const int x0 = static_cast<int>(x);
+    //const int y0 = static_cast<int>(y);
+    const int x0 = static_cast<int>(x);
+    const int y0 = static_cast<int>(y);
     const int x1 = x0 + 1;
     const int y1 = y0 + 1;
 
@@ -94,9 +98,9 @@ T bilinearWithoutDepth(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& i
         return 0;
     }
     
-    const T x1_weight = x - x0;
+    const T x1_weight = x - T(x0);
     const T x0_weight = T(1.0) - x1_weight;
-    const T y1_weight = y - y0;
+    const T y1_weight = y - T(y0);
     const T y0_weight = T(1.0) - y1_weight;
 
     T val = 0.0;

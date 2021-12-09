@@ -66,9 +66,9 @@ class PhotometricError {
     //transform point cloud to camera 2 image plane through extrinsics and intrinsics
     const Eigen::Matrix<L, 2, Eigen::Dynamic> pixels_img2  = (intrinsics_cam2_.cast<L>() * (extrinsics * pc1_.cast<L>()).colwise().hnormalized()).colwise().hnormalized();
     //TODO: check pixels_img2 are in img2
-    check_pixels_in_img(pixels_img2, img_width_, img_height_);
+    //check_pixels_in_img(pixels_img2, img_width_, img_height_);
     //Check pixels in image and Get intensity in image 2
-    auto intensity_in_img2 = comp_all_intensities(pixels_img2 , img2_intensity_);
+    auto intensity_in_img2 = comp_all_intensities<L>(pixels_img2 , img2_intensity_.cast<L>());
     residual[0] = (intensity_in_img2 - img1_intensity_.cast<L>()).norm();
     return true;
   }
@@ -84,46 +84,50 @@ class PhotometricError {
     const Eigen::MatrixXd  img2_depth_;
 };
 
-
-// 代价函数的计算模型
-/* struct PHOTOMETRIC_COST_MatrixMultiply
-{
-    PHOTOMETRIC_COST ( const RGBDImage& x, const RGBDImage& y ) : _x ( x ), _y ( y ) {}
-    // 残差的计算
-    template <typename T>
-    bool operator() (
-        const T* const transform,     // 模型参数，有3维
-        T* residual ) const     // 残差
-    {
-        residual[0] = T ( _y ) - x.warpIntensity(); // y-exp(ax^2+bx+c)
-        return true;
-    }
-    const RGBDImage& _x, _y;    // x,y数据
-};
-
-struct PHOTOMETRIC_COST_Eigen
-{
-    PHOTOMETRIC_COST ( const RGBDImage& x, const RGBDImage& y ) : _x ( x ), _y ( y ) {}
-    // 残差的计算
-    template <typename T>
-    bool operator() (
-        const T* const transform,     // 模型参数，有3维
-        T* residual ) const     // 残差
-    {
-        residual[0] = T ( _y ) - x.warpIntensity(); // y-exp(ax^2+bx+c)
-        return true;
-    }
-    const RGBDImage& _x, _y;    // x,y数据
-}; */
-
-
 //Initial guess is a 7 parameter representation of transformation (quaternion, translation) double [7]
-Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::RgbdImage& img2, const double initial_guess[7])
+void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& img1_intensity, const dvo::RgbdImage& img2)
+{   
+    // 构建最小二乘问题
+    ceres::Problem problem;
+    // initial guess of transform: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
+    double transform[7] = {1, 0, 0, 0, 0, 0, 0};
+    problem.AddResidualBlock (     // 向问题中添加误差项
+    // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
+        new ceres::AutoDiffCostFunction<PhotometricError, 1, 7> ( 
+            new PhotometricError ( pc1, img1_intensity, img2)
+        ),
+        nullptr,            // 核函数，这里不使用，为空
+        transform                 // 待估计参数
+    );
+
+
+    // 配置求解器
+    ceres::Solver::Options options;     // 这里有很多配置项可以填
+    options.linear_solver_type = ceres::DENSE_QR;  // 增量方程如何求解
+    options.minimizer_progress_to_stdout = true;   // 输出到cout
+
+    ceres::Solver::Summary summary;                // 优化信息
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    ceres::Solve ( options, &problem, &summary );  // 开始优化
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>( t2-t1 );
+    cout<<"solve time cost = "<<time_used.count()<<" seconds. "<<endl;
+
+    // 输出结果
+    cout<<summary.BriefReport() <<endl;
+    cout<<"estimated transform";
+    for ( auto t:transform ) cout<< t <<" ";
+    cout<<endl; 
+}
+
+/*
+//Initial guess is a 7 parameter representation of transformation (quaternion, translation) double [7]
+Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::RgbdImage& img2)
 {   
     
     // img1.buildPointCloud();
     dvo::PointCloud img1_pc;
-    img1.camera.buildPointCloud(img1.depth, img1_pc);
+    img1.camera().buildPointCloud(img1.depth, img1_pc);
 
     //img1.PointSelection(); // (place holder) build feature points function
     
@@ -156,7 +160,7 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
         feature_intensity(i) = all_points[i].getIntensityDepty()(0);
     }
     
-    /*
+    
     template<typename T>
     Eigen::Matrix<T, 4, Eigen::Dynamic> feature_points;
     
@@ -180,11 +184,13 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
         v = feature_points_uv(i, 1);
         img1_selected_intensity(i) = img1.intensity.at<double>(u, v);
     }
-    */
+    
+
     // 构建最小二乘问题
     ceres::Problem problem;
-    double transform[7];
-    std::copy = stdinitial_guess; 
+    // transform: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
+    double transform[7] = {1, 0, 0, 0, 0, 0, 0};
+    std::copy(std::begin(initial_guess), std::end(initial_guess), std::start(transform)); 
     problem.AddResidualBlock (     // 向问题中添加误差项
     // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
         new ceres::AutoDiffCostFunction<PhotometricError, 1, 7> ( 
@@ -213,3 +219,4 @@ Eigen::Matrix4d FrontendSolver::solve(const dvo::RgbdImage& img1, const dvo::Rgb
     for ( auto t:transform ) cout<< t <<" ";
     cout<<endl; 
 }
+*/
