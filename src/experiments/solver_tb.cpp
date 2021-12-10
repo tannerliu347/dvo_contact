@@ -2,8 +2,10 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
-#include <eigen3/Eigen/Core>
+#include <opencv2/core/hal/interface.h>
 
+#include <eigen3/Eigen/Core>
+#include <Eigen/Dense>
 
 
 #include <iostream>
@@ -42,9 +44,18 @@ const cv::Scalar YELLOW(0, 255, 255);
 const cv::Scalar MAGENTA(255, 0, 255);
 const cv::Scalar CYAN(255, 255, 0);
 
+// define scaling factor
+const float DEPTH_SCALE = 1.f / 5000;
+
+// define image size
+const size_t cam_width = 640;
+const size_t cam_height = 480;
+
 void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1);
 
 void read_image(const char* filename, Mat& canvas);
+
+void read_intensity(const char* filename, Mat& canvas);
 
 void read_depth(const char* filename, Mat& canvas);
 
@@ -79,15 +90,27 @@ int main()
 
     //read intensity image
     Mat img1_intensity, img2_intensity;
-    read_depth("img1.png", img1_intensity);
-    read_depth("img2.png", img2_intensity);
+    read_intensity("img1.png", img1_intensity);
+    read_intensity("img2.png", img2_intensity);
 
     // read depth image
-    Mat img1_depth, img2_depth;
+    Mat img1_depth(cam_width, cam_height, CV_8UC3), img2_depth(cam_width, cam_height, CV_8UC3); //seg fault declaration
+    // Mat img1_depth_prescale, img2_depth_prescale; // faultless declaration
+    // Mat img1_depth, img2_depth;
+    // read_depth("img1_depth.png", img1_depth_prescale);
+    // read_depth("img2_depth.png", img2_depth_prescale);
+
     read_depth("img1_depth.png", img1_depth);
     read_depth("img2_depth.png", img2_depth);
 
+    // scale the depth
+    // cv::Mat img1_depth(cam_width, cam_height, CV_64F), img2_depth(cam_width, cam_height, CV_64F);
+    // img1_depth = img1_depth_prescale;
+    // img2_depth = img2_depth_prescale;
+    // img1_depth *= DEPTH_SCALE;
+    // img2_depth *= DEPTH_SCALE;
 
+    
     if(img1_cvmat.empty() || img2_cvmat.empty() || img1_depth.empty() || img2_depth.empty())
     {
         std::cout << "Image load failed!" << std::endl;
@@ -106,10 +129,8 @@ int main()
     
     dvo::Intrinsic cam_intrinsic(intrinsic_mat);
     // cam_intrinsic =  dvo::Intrinsic::Intrinsic(intrinsic_mat);
-
+    
     // build dvo::RgbdCamera class
-    size_t cam_width = 640;
-    size_t cam_height = 480;
     dvo::RgbdCamera camera(cam_width, cam_height, cam_intrinsic);
     
     dvo::RgbdImage img1(camera);
@@ -117,6 +138,8 @@ int main()
 
     img1.rgb = img1_cvmat;
     img1.depth = img1_depth;
+    // DEBUG 
+    std::cout << "DEBUG try inspect depth " << img1.depth.at<unsigned int>(300, 200) << std::endl;
     img1.intensity = img1_intensity;
 
     img2.rgb = img2_cvmat;
@@ -128,7 +151,10 @@ int main()
     img2.initialize();
 
     dvo::PointCloud img1_pc;
+
+    std::cout << "DEBUG before build point cloud" << std::endl;
     camera.buildPointCloud(img1_depth, img1_pc);
+    std::cout << "DEBUG build point cloud DONE" << std::endl;
     
     vector<KeyPoint> kps;
     Mat des;
@@ -148,6 +174,15 @@ int main()
 
     cout << "num of kept points = " << kept_kps.size() << endl;
     cout << "num of original points = " << kps.size() << endl;
+    
+    // solver testing starts here 
+    /*
+    FrontendSolver solver;
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    //cout << img1_pc.format(CleanFmt) << endl;
+    //cout << img1_kp_intensity.format(CleanFmt) << endl;
+    solver.solve(kept_pts_pc, img1_kp_intensity, img2);
+    */
 
 
     // for plotting verifications
@@ -195,12 +230,19 @@ void read_image(const char* filename, Mat& canvas)
 }
 
 
-void read_depth(const char* filename, Mat& canvas) 
+void read_intensity(const char* filename, Mat& canvas) 
 {
     std::string cwd = get_current_dir_name();
     std::string image_path =  cwd + "/../src/experiments/test_img/" + std::string(filename);
     canvas = cv::imread(image_path, IMREAD_GRAYSCALE);
     return ; 
+}
+
+void read_depth(const char* filename, Mat& canvas) 
+{
+    std::string cwd = get_current_dir_name();
+    std::string image_path =  cwd + "/../src/experiments/test_img/" + std::string(filename);
+    canvas = cv::imread(image_path, cv::IMREAD_UNCHANGED);
 }
 
 

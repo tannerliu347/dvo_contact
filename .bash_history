@@ -9,3 +9,5 @@ cd ..
 rm -r build/
 rm -rf build/
 exit
+ls
+exit

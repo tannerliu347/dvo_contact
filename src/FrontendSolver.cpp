@@ -3,7 +3,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <ceres/ceres.h>
-#include "ceres/rotation.h"
+#include <ceres/rotation.h>
 #include <chrono>
 #include <vector>
 #include "utils.cpp"
@@ -91,6 +91,7 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
     ceres::Problem problem;
     // initial guess of transform: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
     double transform[7] = {1, 0, 0, 0, 0, 0, 0};
+    /*
     problem.AddResidualBlock (     // 向问题中添加误差项
     // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
         new ceres::AutoDiffCostFunction<PhotometricError, 1, 7> ( 
@@ -99,8 +100,14 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
         nullptr,            // 核函数，这里不使用，为空
         transform                 // 待估计参数
     );
-
-
+    */
+    problem.AddResidualBlock (
+        new ceres::NumericDiffCostFunction<PhotometricError, ceres::CENTRAL, 1, 7>(
+            new PhotometricError ( pc1, img1_intensity, img2)
+        ),
+        nullptr,
+        transform
+    );
     // 配置求解器
     ceres::Solver::Options options;     // 这里有很多配置项可以填
     options.linear_solver_type = ceres::DENSE_QR;  // 增量方程如何求解
