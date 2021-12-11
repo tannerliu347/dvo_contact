@@ -145,6 +145,10 @@ void pt_selection_test(YAML::Node config_setting) {
   // dvo::RgbdImagePtr imgPtr_1 = rCam_1.create(curImgs_1[0], curImgs_1[1]);
   dvo::CameraPyramid cam_pyr_1(rCam_1);
 
+  cv::imshow("gray", curImgs_1[0]);
+  cv::imshow("dept", curImgs_1[1]);
+  cv::waitKey(0);
+
   // load cur image
   std::cout << "loading cur image" << std::endl;
   auto curImgs_2 = tum_loader.getNext().first;
@@ -161,8 +165,8 @@ void pt_selection_test(YAML::Node config_setting) {
 
   // Eigen::Affine3d transformation;
   dvo::PtAndGradVerify selection_verify;
-  selection_verify.intensity_threshold = 100.0f;
-  selection_verify.depth_threshold = 100.0f;
+  selection_verify.intensity_threshold = 10.0f;
+  selection_verify.depth_threshold = 10.0f;
 
   dvo::PtSelection reference_selection(reference, selection_verify);
   
@@ -181,9 +185,40 @@ void pt_selection_test(YAML::Node config_setting) {
   std::cout << "Finished selection" << std::endl;
 
   std::cout << "Loop through the iterators" << std::endl;
-  for (auto it = first_point; it != last_point; it++) {
-    std::cout << "x =  " << it->x << ", y = " << it->y << ", z = " << it->z << std::endl;
+  // for (auto it = first_point; it != last_point; it++) {
+  //   std::cout << "x =  " << it->x << ", y = " << it->y << ", z = " << it->z << std::endl;
+  // }
+
+  // visualize this pointcloud
+  pangolin::CreateWindowAndBind("Main",640,480);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  pangolin::OpenGlRenderState s_cam(
+          pangolin::ProjectionMatrix(640,480,420,420,320,320,0.2,100),
+          pangolin::ModelViewLookAt(2,0,2, 0,0,0, pangolin::AxisY)
+  );
+
+  pangolin::Handler3D handler(s_cam);
+  pangolin::View& d_cam = pangolin::CreateDisplay()
+          .SetBounds(0.0, 1.0, 0.0, 1.0, -640.0f/480.0f)
+          .SetHandler(&handler);
+
+  while( !pangolin::ShouldQuit() )
+  {
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      d_cam.Activate(s_cam);
+      glBegin( GL_POINTS );
+      glColor3f(1.0,1.0,1.0);
+      // std::cout << pc.cols() << std::endl;
+      for (auto it = first_point; it != last_point; it++) {
+          // Eigen::Vector4f point = pc.col(i);
+          glVertex3f(it->x, it->y, it->z);
+      } 
+      glEnd();
+      pangolin::FinishFrame();
   }
+
   std::cout << "Finished loop" << std::endl;
 
 }

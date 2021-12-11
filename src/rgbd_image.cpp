@@ -75,7 +75,7 @@ CameraPyramid::CameraPyramid(size_t base_width, size_t base_height, const dvo::I
 }
 
 CameraPyramid::~CameraPyramid() {
-    std::cout << "Destruct CameraPyramid" << std::endl;
+    // std::cout << "Destruct CameraPyramid" << std::endl;
 }
 
 ImagePyramidPtr CameraPyramid::create(const cv::Mat& base_intensity, const cv::Mat& base_depth) {
@@ -113,25 +113,9 @@ ImagePyramid::ImagePyramid(CameraPyramid& camera, const cv::Mat& intensity, cons
 }
 
 ImagePyramid::~ImagePyramid() {
-    std::cout << "Destruct Image Pyramid" << std::endl;
+    // std::cout << "Destruct Image Pyramid" << std::endl;
 }
 
-// template<typename T>
-// static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out);
-
-<<<<<<< HEAD
-RgbdImage& ImagePyramid::level(size_t idx) {
-    assert(idx < levels_.size());
-    return *levels_[idx]; // return image for current level
-}
-
-double ImagePyramid::timestamp() const {
-    return !levels_.empty() ? levels_[0]->timestamp : 0.0;
-}
-=======
-// template<typename T>
-// static void pyrDownsample(const cv::Mat& in, cv::Mat& out);
->>>>>>> 8a2bb516d0e28ef8dedee9980f4cf05cab66b593
 
 // static smooth and subsample
 static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out) {
@@ -163,7 +147,6 @@ void ImagePyramid::build(const size_t num_levels) {
         levels_.push_back(camPyr_.level(i).create());
         pyrDownsample(levels_[i - 1]->depth, levels_[i]->depth);
         pyrMeanDownsample(levels_[i - 1]->intensity, levels_[i]->intensity);
-        //TODO: add smooth and subsample for intensity and depth
         levels_[i]->initialize();
     }
 }
@@ -192,7 +175,7 @@ RgbdImage::RgbdImage(const RgbdCamera& camera) :
     height(0) {}
 
 RgbdImage::~RgbdImage() {
-    std::cout << "Destruct RgbdImage" << std::endl;
+    // std::cout << "Destruct RgbdImage" << std::endl;
 }
 
 const RgbdCamera& RgbdImage::camera() const
@@ -202,13 +185,6 @@ const RgbdCamera& RgbdImage::camera() const
 
 void RgbdImage::initialize()
 {
-    bool intensity_bool = hasIntensity();
-    bool depth_bool = hasDepth();
-
-    std::cout << "intensity_bool: " << intensity_bool << std::endl;
-    std::cout << "depth_bool: " << depth_bool << std::endl;
-
-
     assert(hasIntensity() || hasDepth());
 
     intensity_requires_calculation_ = true;
@@ -301,7 +277,6 @@ void RgbdImage::calculateDerivatives() {
     calculateDepthDerivatives();
 }
 
-// TODO: please check again to make sure this function is written correctly to combine RgbdCamera::buildPointCould() and RgbdImage::buildPointCould()
 void RgbdImage::buildPointCloud() {
     if(!pointcloud_requires_build_) return;
 
@@ -349,31 +324,6 @@ void RgbdImage::buildAccelerationStructure() {
         calculateDerivatives();
         acceleration_requires_calculation_ = false;
     }
-
-    // if(acceleration.total() == 0) {
-    //     calculateDerivatives();
-    //     cv::Mat zeros = cv::Mat::zeros(intensity.size(), CV_32FC1);
-    //     ///TODO: Convert to a certain type, check again(cv::merge can only merge data with same type)
-    //     /// TOIGNORE: change it to vector:
-        
-    //     cv::Mat intensity_converted;
-    //     intensity.convertTo(intensity_converted, CV_32FC1);
-    //     cv::Mat intensity_dx_converted;
-    //     intensity_dx.convertTo(intensity_dx_converted, CV_32FC1);
-    //     cv::Mat intensity_dy_converted;
-    //     intensity_dy.convertTo(intensity_dy_converted, CV_32FC1);
-    //     cv::Mat depth_converted;
-    //     depth.convertTo(depth_converted, CV_32FC1);
-    //     cv::Mat depth_dx_converted;
-    //     depth_dx.convertTo(depth_dx_converted, CV_32FC1);
-    //     cv::Mat depth_dy_converted;
-    //     depth_dy.convertTo(depth_dy_converted, CV_32FC1);
-    //     cv::Mat channels[8] = {intensity_converted, depth, intensity_dx_converted, intensity_dy_converted, depth_dx, depth_dy, zeros, zeros};
-    //     cv::merge(channels, 8, acceleration);
-        
-    //     // cv::Mat channels[2] = {intensity_converted, depth};
-    //     // cv::merge(channels, 2, acceleration); 
-    // }
 }
 
 bool RgbdImage::inImage(const float& x, const float& y) const

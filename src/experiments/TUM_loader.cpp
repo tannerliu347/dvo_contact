@@ -43,7 +43,7 @@ std::pair<std::vector<cv::Mat>, float> TUMLoader::getNext() {
     // read images using the directory
     cv::Mat grey = cv::imread(rgb_files_[idx_], cv::IMREAD_GRAYSCALE);
     cv::Mat dep = cv::imread(dep_files_[idx_], cv::IMREAD_ANYDEPTH);
-    // std::cout << dept.type() << std::endl;
+    // Both gray scale and depth use CV_32FC1
     cv::Mat gray;
     grey.convertTo(gray, CV_32FC1);
     cv::Mat dept = depthRawToM(dep);

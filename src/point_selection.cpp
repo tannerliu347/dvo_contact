@@ -79,12 +79,10 @@ void PtSelection::select(const size_t& level, PtSelection::PtIterator& first_poi
   if(storage_.size() < level + 1)
     storage_.resize(level + 1);
 
-  /// TODO: Change variable name
   Storage& storage_level = storage_[level];
 
   if(!storage_level.is_cached || debug_)
   {
-    std::cout << "Ready to create img" << std::endl;
     dvo::RgbdImage& img = pyramid_->level(level);
     
     img.buildPointCloud();
