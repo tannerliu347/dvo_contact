@@ -112,11 +112,42 @@ ImagePyramid::ImagePyramid(CameraPyramid& camera, const cv::Mat& intensity, cons
 
 ImagePyramid::~ImagePyramid() {}
 
+// template<typename T>
+// static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out);
+
+// template<typename T>
+// static void pyrDownsample(const cv::Mat& in, cv::Mat& out);
+
+// static smooth and subsample
+static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out) {
+    out.create(cv::Size(in.cols / 2, in.rows / 2), in.type());
+    for (int i = 0; i < out.rows; i++) {
+        for (int j = 0; j < out.cols; j++) {
+            int j0 = j * 2;
+            int j1 = j0 + 1;
+            int i0 = i * 2;
+            int i1 = i0 + 1;
+            out.at<float>(i, j) = (in.at<float>(i0, j0) + in.at<float>(i0, j1) + in.at<float>(i1, j0) + in.at<float>(i1, j1)) / 4.0f;
+        }
+    }
+}
+
+static void pyrDownsample(const cv::Mat& in, cv::Mat& out) {
+    out.create(cv::Size(in.cols / 2, in.rows / 2), in.type());
+    for (int i = 0; i < out.rows; i++) {
+        for (int j = 0; j < out.cols; j++) {
+            out.at<float>(i, j) = in.at<float>(i * 2, j * 2);
+        }
+    }
+}
+
 void ImagePyramid::build(const size_t num_levels) {
     if (levels_.size() >= num_levels) return;
     size_t start = levels_.size();
     for (size_t i = start; i < num_levels; i++) {
         levels_.push_back(camPyr_.level(i).create());
+        pyrDownsample(levels_[i - 1]->depth, levels_[i]->depth);
+        pyrMeanDownsample(levels_[i - 1]->intensity, levels_[i]->intensity);
         //TODO: add smooth and subsample for intensity and depth
         levels_[i]->initialize();
     }
@@ -131,28 +162,6 @@ double ImagePyramid::timestamp() const {
     return !levels_.empty() ? levels_[0]->timestamp : 0.0;
 }
 
-// static smooth and subsample
-static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out) {
-    out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
-    for (int i = 0; i < out.rows; i++) {
-        for (int j = 0; j < out.cols; j++) {
-            int j0 = j * 2;
-            int j1 = j0 + 1;
-            int i0 = i * 2;
-            int i1 = i0 + 1;
-            out.at<float>(i, j) = (in.at<float>(i0, j0) + in.at<float>(i0, j1) + in.at<float>(i1, j0) + in.at<float>(i1, j1)) / 4.0f;
-        }
-    }
-}
-
-static void pyrDownsample(const cv::Mat& in, cv::Mat& out) {
-    out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
-    for (int i = 0; i < out.rows; i++) {
-        for (int j = 0; j < out.cols; j++) {
-            out.at<float>(i, j) = in.at<float>(i * 2, j * 2);
-        }
-    }
-}
 
 // ----------------------------- ImagePyramid ----------------------------------------
 

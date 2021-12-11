@@ -88,7 +88,48 @@ void rgbd_camera_test(std::string file_path) {
         glEnd();
         pangolin::FinishFrame();
     }
+}
 
+void pyramid_test(std::string file_path) {
+    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+    auto curImgs = tum_loader.getNext();
+    dvo::Intrinsic intrins = tum_loader.getIntrinsic();
+    dvo::RgbdCamera rCam(640, 480, intrins);
+    dvo::CameraPyramid camPyr(rCam);
+    camPyr.build(5);
+    dvo::ImagePyramidPtr img_pyramid = camPyr.create(curImgs.first[0], curImgs.first[1]);
+    img_pyramid->build(5);
+    for (int i = 0; i < 5; i++) {
+        dvo::RgbdImage pyrimg = img_pyramid->level(i);
+        cv::Mat inten = pyrimg.intensity;
+        cv::Mat depth = pyrimg.depth;
+        cv::imshow("gray", inten);
+        cv::imshow("dept", depth);
+        cv::waitKey(0);
+    }
+}
+
+void create_test() {
+    cv::Mat img(cv::Size(640, 480),5);
+    
+    // cv::Mat a,b,c,d;
+    typedef std::shared_ptr<cv::Mat> mat_ptr;
+    std::vector<mat_ptr> mat_vec;
+    mat_vec.push_back(std::make_shared<cv::Mat>());
+    int w = 640;
+    int h = 480;
+    for (int i = 0; i < 1; i++) {
+        w /= 2;
+        h /= 2;
+        mat_ptr cur = mat_vec[i];
+        cv::Mat& in  = img;
+        cur->create(cv::Size(in.cols, in.rows), in.type());
+        // b.create(cv::Size(w, h), 2);
+        // c.create(cv::Size(w, h), 2);
+        // d.create(cv::Size(w, h), 2);
+        // w /= 2;
+        // h /= 2;
+    }
 }
 
 
@@ -101,6 +142,7 @@ int main() {
     std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
                                                                 : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
     // TUM_loader_test();
-    rgbd_camera_test(image_load_path);
+    // rgbd_camera_test(image_load_path);
+    pyramid_test(image_load_path);
     return 0;
 }
