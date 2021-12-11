@@ -41,9 +41,11 @@ std::pair<std::vector<cv::Mat>, float> TUMLoader::getNext() {
         return res;
     }
     // read images using the directory
-    cv::Mat gray = cv::imread(rgb_files_[idx_], cv::IMREAD_GRAYSCALE);
+    cv::Mat grey = cv::imread(rgb_files_[idx_], cv::IMREAD_GRAYSCALE);
     cv::Mat dep = cv::imread(dep_files_[idx_], cv::IMREAD_ANYDEPTH);
     // std::cout << dept.type() << std::endl;
+    cv::Mat gray;
+    grey.convertTo(gray, CV_32FC1);
     cv::Mat dept = depthRawToM(dep);
     
     res.first.push_back(gray);

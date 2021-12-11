@@ -116,16 +116,10 @@ ImagePyramid::~ImagePyramid() {
     std::cout << "Destruct Image Pyramid" << std::endl;
 }
 
-void ImagePyramid::build(const size_t num_levels) {
-    if (levels_.size() >= num_levels) return;
-    size_t start = levels_.size();
-    for (size_t i = start; i < num_levels; i++) {
-        levels_.push_back(camPyr_.level(i).create());
-        //TODO: add smooth and subsample for intensity and depth
-        levels_[i]->initialize();
-    }
-}
+// template<typename T>
+// static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out);
 
+<<<<<<< HEAD
 RgbdImage& ImagePyramid::level(size_t idx) {
     assert(idx < levels_.size());
     return *levels_[idx]; // return image for current level
@@ -134,10 +128,14 @@ RgbdImage& ImagePyramid::level(size_t idx) {
 double ImagePyramid::timestamp() const {
     return !levels_.empty() ? levels_[0]->timestamp : 0.0;
 }
+=======
+// template<typename T>
+// static void pyrDownsample(const cv::Mat& in, cv::Mat& out);
+>>>>>>> 8a2bb516d0e28ef8dedee9980f4cf05cab66b593
 
 // static smooth and subsample
 static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out) {
-    out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
+    out.create(cv::Size(in.cols / 2, in.rows / 2), in.type());
     for (int i = 0; i < out.rows; i++) {
         for (int j = 0; j < out.cols; j++) {
             int j0 = j * 2;
@@ -150,13 +148,35 @@ static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out) {
 }
 
 static void pyrDownsample(const cv::Mat& in, cv::Mat& out) {
-    out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
+    out.create(cv::Size(in.cols / 2, in.rows / 2), in.type());
     for (int i = 0; i < out.rows; i++) {
         for (int j = 0; j < out.cols; j++) {
             out.at<float>(i, j) = in.at<float>(i * 2, j * 2);
         }
     }
 }
+
+void ImagePyramid::build(const size_t num_levels) {
+    if (levels_.size() >= num_levels) return;
+    size_t start = levels_.size();
+    for (size_t i = start; i < num_levels; i++) {
+        levels_.push_back(camPyr_.level(i).create());
+        pyrDownsample(levels_[i - 1]->depth, levels_[i]->depth);
+        pyrMeanDownsample(levels_[i - 1]->intensity, levels_[i]->intensity);
+        //TODO: add smooth and subsample for intensity and depth
+        levels_[i]->initialize();
+    }
+}
+
+RgbdImage& ImagePyramid::level(size_t idx) {
+    assert(idx < levels_.size());
+    return *levels_[idx];
+}
+
+double ImagePyramid::timestamp() const {
+    return !levels_.empty() ? levels_[0]->timestamp : 0.0;
+}
+
 
 // ----------------------------- ImagePyramid ----------------------------------------
 
