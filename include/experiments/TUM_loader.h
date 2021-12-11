@@ -28,6 +28,12 @@ public:
     Intrinsic getIntrinsic();
 
 private:
+    /**
+     * @brief converts depth to meters
+     */
+    cv::Mat depthRawToM(cv::Mat& depth_raw);
+
+private:
     std::vector<float> timestamps_;
     std::vector<std::string> rgb_files_;
     std::vector<std::string> dep_files_;

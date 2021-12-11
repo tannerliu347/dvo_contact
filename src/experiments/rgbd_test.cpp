@@ -2,6 +2,7 @@
 #include "TUM_loader.h"
 #include "yaml-cpp/yaml.h"
 
+#include <eigen3/Eigen/Core>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <pangolin/display/display.h>
@@ -9,6 +10,7 @@
 #include <pangolin/scene/axis.h>
 #include <pangolin/scene/scenehandler.h>
 #include <iostream>
+#include <algorithm>
 
 void TUM_loader_test() {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
@@ -19,13 +21,41 @@ void TUM_loader_test() {
     }
 }
 
+
+// test buildPointcloud
 void rgbd_camera_test(std::string file_path) {
     dvo::TUMLoader tum_loader(file_path);
     auto curImgs = tum_loader.getNext().first;
+    for (int i = 0; i < 700; i++)
+        curImgs = tum_loader.getNext().first;
+    cv::imshow("gray", curImgs[0]);
+    cv::imshow("meh", curImgs[1]);
+    cv::waitKey(0);
+    // float maxInten = 0.0;
+    // int maxI = 0, maxJ = 0;
+    // for (int i = 0; i < curImgs[1].rows; i++)
+    //     for (int j = 0; j < curImgs[1].cols; j++) {
+    //         // std::cout << curImgs[1].at<float>(i, j) << std::endl;
+    //         if (curImgs[1].at<float>(i, j) > maxInten) {
+    //             maxI = i;
+    //             maxJ = j;
+    //             maxInten = curImgs[1].at<float>(i, j);
+    //         }
+    //         // maxInten = std::max(maxInten, curImgs[1].at<float>(i, j));
+    //     }
+    // std::cout << maxInten << "i: " << maxI << " j: " << maxJ << std::endl;
     dvo::Intrinsic intrins = tum_loader.getIntrinsic();
-    std::cout << "Camera fx:\n";
-    std::cout << intrins.fx() << std::endl;
+    // std::cout << "Camera fx:\n";
+    // std::cout << intrins.fx() << std::endl;
+    // build pc
     dvo::RgbdCamera rCam(640, 480, intrins);
+    // dvo::PointCloud pc;
+    // rCam.buildPointCloud(curImgs[1], pc);
+    // for (int i = 153600; i < 153620; i++) {
+    //     Eigen::Matrix<float, 4, 1> point = pc.col(i);
+    //     std::cout << point << std::endl;
+    //     std::cout << "======\n";
+    // } 
     dvo::RgbdImagePtr imgPtr = rCam.create(curImgs[0], curImgs[1]);
     imgPtr->buildPointCloud();
     dvo::PointCloud pc = imgPtr->point_cloud;
@@ -48,24 +78,23 @@ void rgbd_camera_test(std::string file_path) {
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         d_cam.Activate(s_cam);
-        glBegin( GL_POINTS );//点设置的开始
+        glBegin( GL_POINTS );
         glColor3f(1.0,1.0,1.0);
-        auto point = pc.data();
         std::cout << pc.cols() << std::endl;
-        for (int i = 0; i < 640 * 480; i++, point++) {
-            // auto point = pc.data();
-            // std::cout << point[0] << ", " <<  point[1] << ", " << point[2] << std::endl;
-            // glVertex3f(point[0], point[1], point[2]);
+        for (int i = 0; i < 640 * 480; i++) {
+            Eigen::Vector4f point = pc.col(i);
+            glVertex3f(point(0), point(1), point(2));
         } 
         glEnd();
         pangolin::FinishFrame();
     }
+
 }
 
 
 int main() {
     char resolved_path[PATH_MAX];
-    realpath("../", resolved_path);
+    char* tmp = realpath("../", resolved_path);
     std::cout << resolved_path << std::endl;
     YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
     
