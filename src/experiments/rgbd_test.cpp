@@ -1,6 +1,7 @@
 #include "rgbd_image.h"
 #include "TUM_loader.h"
 #include "yaml-cpp/yaml.h"
+#include "point_selection.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -10,16 +11,17 @@
 #include <pangolin/scene/scenehandler.h>
 #include <iostream>
 
-void rgbd_camera_test() {
-    char resolved_path[PATH_MAX];
-    realpath("../", resolved_path);
-    std::cout << resolved_path << std::endl;
-    YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
-    
-    std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
-                                                                : "/home/tingjun/code/dvo_contact/dataset/";
+void TUM_loader_test() {
+    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+    auto cur = tum_loader.getNext();
+    while (tum_loader.hasNext()) {
+        std::cout << cur.second << std::endl;
+        cv::waitKey(10);
+    }
+}
 
-    dvo::TUMLoader tum_loader(image_load_path);
+void rgbd_camera_test(std::string file_path) {
+    dvo::TUMLoader tum_loader(file_path);
     auto curImgs = tum_loader.getNext().first;
     dvo::Intrinsic intrins = tum_loader.getIntrinsic();
     std::cout << "Camera fx:\n";
@@ -61,9 +63,73 @@ void rgbd_camera_test() {
     }
 }
 
+void pt_selection_test(YAML::Node config_setting) {
+  std::string image_load_path = config_setting["dvo"]["image_load_path"].as<std::string>();
+  dvo::TUMLoader tum_loader(image_load_path);
+                               
+  // load ref image
+  std::cout << "loading ref image" << std::endl;
+  auto curImgs_1 = tum_loader.getNext().first;
+  dvo::Intrinsic intrins_1 = tum_loader.getIntrinsic();
+  dvo::RgbdCamera rCam_1(640, 480, intrins_1);
+  // dvo::RgbdImagePtr imgPtr_1 = rCam_1.create(curImgs_1[0], curImgs_1[1]);
+  dvo::CameraPyramid cam_pyr_1(rCam_1);
+
+  // load cur image
+  std::cout << "loading cur image" << std::endl;
+  auto curImgs_2 = tum_loader.getNext().first;
+  dvo::Intrinsic intrins_2 = tum_loader.getIntrinsic();
+  dvo::RgbdCamera rCam_2(640, 480, intrins_2);
+  // dvo::RgbdImagePtr imgPtr_2 = rCam_2.create(curImgs_2[0], curImgs_2[1]);
+  dvo::CameraPyramid cam_pyr_2(rCam_2);
+
+  size_t level = 0;
+
+  // Set Image pyramid coefficients:
+  dvo::ImagePyramid reference(cam_pyr_1, curImgs_1[0], curImgs_1[1]);
+  dvo::ImagePyramid current(cam_pyr_2, curImgs_2[0], curImgs_2[1]);
+
+  // Eigen::Affine3d transformation;
+  dvo::PtAndGradVerify selection_verify;
+  selection_verify.intensity_threshold = 100.0f;
+  selection_verify.depth_threshold = 100.0f;
+
+  dvo::PtSelection reference_selection(reference, selection_verify);
+  
+  
+  std::cout << "Setting Pyram" << std::endl;
+  reference_selection.setImagePyramid(reference);
+  reference_selection.getImagePyramid();
+
+  std::cout << "Got reference_selection image pyramid" << std::endl;
+
+  bool success = true;
+
+  dvo::PtSelection::PtIterator first_point, last_point;
+  std::cout << "Selecting points from reference level" << std::endl;
+  reference_selection.select(level, first_point, last_point);
+  std::cout << "Finished selection" << std::endl;
+
+  std::cout << "Loop through the iterators" << std::endl;
+  for (auto it = first_point; it != last_point; it++) {
+    std::cout << "x =  " << it->x << ", y = " << it->y << ", z = " << it->z;
+  }
+  std::cout << "Finished loop" << std::endl;
+
+}
+
 
 int main() {
+    char resolved_path[PATH_MAX];
+    char* p = realpath("../", resolved_path);
+
+    YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
+    
+    std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
+                                                                : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
     // TUM_loader_test();
-    rgbd_camera_test();
+    // rgbd_camera_test(image_load_path);
+
+    pt_selection_test(config_setting);
     return 0;
 }
