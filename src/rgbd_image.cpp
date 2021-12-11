@@ -74,7 +74,9 @@ CameraPyramid::CameraPyramid(size_t base_width, size_t base_height, const dvo::I
     levels_.push_back(std::make_shared<RgbdCamera>(base_width, base_height, base_intrinsics));
 }
 
-CameraPyramid::~CameraPyramid() {}
+CameraPyramid::~CameraPyramid() {
+    std::cout << "Destruct CameraPyramid" << std::endl;
+}
 
 ImagePyramidPtr CameraPyramid::create(const cv::Mat& base_intensity, const cv::Mat& base_depth) {
     return std::make_shared<ImagePyramid>(*this, base_intensity, base_depth);
@@ -110,7 +112,9 @@ ImagePyramid::ImagePyramid(CameraPyramid& camera, const cv::Mat& intensity, cons
     levels_.push_back(camPyr_.level(0).create(intensity, depth));
 }
 
-ImagePyramid::~ImagePyramid() {}
+ImagePyramid::~ImagePyramid() {
+    std::cout << "Destruct Image Pyramid" << std::endl;
+}
 
 void ImagePyramid::build(const size_t num_levels) {
     if (levels_.size() >= num_levels) return;
@@ -124,7 +128,7 @@ void ImagePyramid::build(const size_t num_levels) {
 
 RgbdImage& ImagePyramid::level(size_t idx) {
     assert(idx < levels_.size());
-    return *levels_[idx];
+    return *levels_[idx]; // return image for current level
 }
 
 double ImagePyramid::timestamp() const {
@@ -163,10 +167,13 @@ RgbdImage::RgbdImage(const RgbdCamera& camera) :
     intensity_requires_calculation_(true),
     depth_requires_calculation_(true),
     pointcloud_requires_build_(true),
+    acceleration_requires_calculation_(true),
     width(0),
     height(0) {}
 
-RgbdImage::~RgbdImage() {}
+RgbdImage::~RgbdImage() {
+    std::cout << "Destruct RgbdImage" << std::endl;
+}
 
 const RgbdCamera& RgbdImage::camera() const
 {
@@ -175,6 +182,13 @@ const RgbdCamera& RgbdImage::camera() const
 
 void RgbdImage::initialize()
 {
+    bool intensity_bool = hasIntensity();
+    bool depth_bool = hasDepth();
+
+    std::cout << "intensity_bool: " << intensity_bool << std::endl;
+    std::cout << "depth_bool: " << depth_bool << std::endl;
+
+
     assert(hasIntensity() || hasDepth());
 
     intensity_requires_calculation_ = true;
@@ -226,7 +240,7 @@ void RgbdImage::calculateDerivativeX(const cv::Mat& img, cv::Mat& result) {
             int prev = std::max(j - 1, 0);
             int next = std::min(j + 1, img.cols - 1);
             // TODO: why times 0.5 here?
-            result.at<float>(i, j) = (img.at<float>(i, next) - img.at<float>(i, prev)) * 0.5f;
+            result.at<float>(i, j) = (float) (img.at<float>(i, next) - img.at<float>(i, prev)) * 0.5f;
         }
     }
 }
@@ -239,7 +253,7 @@ void RgbdImage::calculateDerivativeY(const cv::Mat& img, cv::Mat& result) {
             int prev = std::max(i - 1, 0);
             int next = std::min(i + 1, img.rows - 1);
             // TODO: why times 0.5 here?
-            result.at<float>(i, j) = (img.at<float>(next, j) - img.at<float>(prev, j)) * 0.5f;
+            result.at<float>(i, j) = (float) (img.at<float>(next, j) - img.at<float>(prev, j)) * 0.5f;
         }
     }
 }
@@ -249,6 +263,7 @@ void RgbdImage::calculateIntensityDerivatives() {
     assert(hasIntensity());
     calculateDerivativeX(intensity, intensity_dx);
     calculateDerivativeY(intensity, intensity_dy);
+    
     intensity_requires_calculation_ = false;
 }
 
@@ -257,6 +272,7 @@ void RgbdImage::calculateDepthDerivatives() {
     assert(hasDepth());
     calculateDerivativeX(depth, depth_dx);
     calculateDerivativeY(depth, depth_dy);
+    
     depth_requires_calculation_ = false;
 }
 
@@ -309,12 +325,35 @@ void RgbdImage::calculateNormals() {
 }
 
 void RgbdImage::buildAccelerationStructure() {
-    if(acceleration.total() == 0) {
+    if (acceleration_requires_calculation_) {
         calculateDerivatives();
-        cv::Mat zeros = cv::Mat::zeros(intensity.size(), intensity.type());
-        cv::Mat channels[8] = {intensity, depth, intensity_dx, intensity_dy, depth_dx, depth_dy, zeros, zeros};
-        cv::merge(channels, 8, acceleration);
+        acceleration_requires_calculation_ = false;
     }
+
+    // if(acceleration.total() == 0) {
+    //     calculateDerivatives();
+    //     cv::Mat zeros = cv::Mat::zeros(intensity.size(), CV_32FC1);
+    //     ///TODO: Convert to a certain type, check again(cv::merge can only merge data with same type)
+    //     /// TOIGNORE: change it to vector:
+        
+    //     cv::Mat intensity_converted;
+    //     intensity.convertTo(intensity_converted, CV_32FC1);
+    //     cv::Mat intensity_dx_converted;
+    //     intensity_dx.convertTo(intensity_dx_converted, CV_32FC1);
+    //     cv::Mat intensity_dy_converted;
+    //     intensity_dy.convertTo(intensity_dy_converted, CV_32FC1);
+    //     cv::Mat depth_converted;
+    //     depth.convertTo(depth_converted, CV_32FC1);
+    //     cv::Mat depth_dx_converted;
+    //     depth_dx.convertTo(depth_dx_converted, CV_32FC1);
+    //     cv::Mat depth_dy_converted;
+    //     depth_dy.convertTo(depth_dy_converted, CV_32FC1);
+    //     cv::Mat channels[8] = {intensity_converted, depth, intensity_dx_converted, intensity_dy_converted, depth_dx, depth_dy, zeros, zeros};
+    //     cv::merge(channels, 8, acceleration);
+        
+    //     // cv::Mat channels[2] = {intensity_converted, depth};
+    //     // cv::merge(channels, 2, acceleration); 
+    // }
 }
 
 bool RgbdImage::inImage(const float& x, const float& y) const

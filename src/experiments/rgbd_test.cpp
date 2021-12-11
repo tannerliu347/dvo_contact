@@ -141,7 +141,7 @@ void pt_selection_test(YAML::Node config_setting) {
 
   std::cout << "Loop through the iterators" << std::endl;
   for (auto it = first_point; it != last_point; it++) {
-    std::cout << "x =  " << it->x << ", y = " << it->y << ", z = " << it->z;
+    std::cout << "x =  " << it->x << ", y = " << it->y << ", z = " << it->z << std::endl;
   }
   std::cout << "Finished loop" << std::endl;
 

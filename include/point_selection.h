@@ -13,7 +13,7 @@ public:
   // (x, y): point position in image; z: depth; i: intensity;
   // idx (idy): intensity gradient along x (y);
   // ddx (ddy): intensity gradient along x (y);
-  virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const = 0;
+  virtual bool isPointOk(const size_t& x, const size_t& y, const float& d, const float& idx, const float& idy, const float& ddx, const float& ddy) const = 0;
 };
 
 // Valid point verification:
@@ -24,9 +24,9 @@ public:
   // (x, y): point position in image; z: depth; i: intensity;
   // idx (idy): intensity gradient along x (y);
   // ddx (ddy): intensity gradient along x (y);
-  virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const
+  virtual bool isPointOk(const size_t& x, const size_t& y, const float& d, const float& idx, const float& idy, const float& ddx, const float& ddy) const
   {
-    return 1;
+    return d == d && ddx == ddx && ddy == ddy; // Delete NaN data
   }
 };
 
@@ -48,9 +48,10 @@ public:
   // (x, y): point position in image; z: depth; i: intensity;
   // idx (idy): intensity gradient along x (y);
   // ddx (ddy): intensity gradient along x (y);
-  virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const
+  virtual bool isPointOk(const size_t& x, const size_t& y, const float& d, const float& idx, const float& idy, const float& ddx, const float& ddy) const
   {
-    return (std::abs(idx) > intensity_threshold || std::abs(idy) > intensity_threshold || std::abs(ddx) > depth_threshold ||  std::abs(ddy) > depth_threshold);
+    // Delete NaN data
+    return d == d && ddx == ddx && ddy == ddy && ( std::abs(idx) > intensity_threshold || std::abs(idy) > intensity_threshold || std::abs(ddx) > depth_threshold ||  std::abs(ddy) > depth_threshold);
   }
 };
 

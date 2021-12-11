@@ -84,7 +84,9 @@ void PtSelection::select(const size_t& level, PtSelection::PtIterator& first_poi
 
   if(!storage_level.is_cached || debug_)
   {
+    std::cout << "Ready to create img" << std::endl;
     dvo::RgbdImage& img = pyramid_->level(level);
+    
     img.buildPointCloud();
     img.buildAccelerationStructure();
 
@@ -115,13 +117,14 @@ PtSelection::PtIterator PtSelection::selectPointsFromImage(const dvo::RgbdImage&
     // idx to i, j
     uint i = idx / w;
     uint j = idx % w;
-    point.i = img.acceleration.at<Vector8f>(i, j)(0);
-    point.d = img.acceleration.at<Vector8f>(i, j)(1); 
-    point.idx = img.acceleration.at<Vector8f>(i, j)(2); 
-    point.idy = img.acceleration.at<Vector8f>(i, j)(3); 
-    point.ddx = img.acceleration.at<Vector8f>(i, j)(4); 
-    point.ddy = img.acceleration.at<Vector8f>(i, j)(5); 
-    point.time_interp = img.acceleration.at<Vector8f>(i, j)(6); 
+    point.i = img.intensity.at<float>(i, j);
+    point.d = img.depth.at<float>(i, j); 
+    point.idx = img.intensity_dx.at<float>(i, j); 
+    point.idy = img.intensity_dy.at<float>(i, j); 
+    point.ddx = img.depth_dx.at<float>(i, j); 
+    point.ddy = img.depth_dy.at<float>(i, j); 
+    // point.time_interp = img.timestamp.at<double>(i, j); 
+    point.time_interp = 0; 
     points_with_IandD[idx] = point;
   }
 
