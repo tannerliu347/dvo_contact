@@ -167,6 +167,9 @@ public:
     // transformation is the transformation from reference to this image
     void warpIntensity(const AffineTransform& transformation, const PointCloud& reference_pointcloud, 
                        const Intrinsic& intrinsics, RgbdImage& result, PointCloud& transformed_pointcloud);
+    // here, the input point cloud is for only the selected points               
+    Eigen::VectorXd warpIntensity2(const Eigen::MatrixXf& transformation, const PointCloud& reference_pointcloud, 
+                                const Intrinsic& intrinsics) const;
     // forward warping
     // transformation is the transformation from this image to the reference image
     void warpIntensityForward(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result, cv::Mat_<cv::Vec3d>& cloud);

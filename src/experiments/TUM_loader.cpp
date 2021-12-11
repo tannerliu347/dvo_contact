@@ -42,7 +42,7 @@ std::pair<std::vector<cv::Mat>, float> TUMLoader::getNext() {
     }
     // read images using the directory
     cv::Mat gray = cv::imread(rgb_files_[idx_], cv::IMREAD_GRAYSCALE);
-    cv::Mat dept = cv::imread(dep_files_[idx_], cv::IMREAD_ANYDEPTH); //TODO: check if this is correct
+    cv::Mat dept = cv::imread(dep_files_[idx_], cv::IMREAD_ANYDEPTH); //TODO: check if this is correct 
     res.first.push_back(gray);
     res.first.push_back(dept);
     res.second = timestamps_[idx_];

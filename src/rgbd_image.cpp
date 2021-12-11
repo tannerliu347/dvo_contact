@@ -372,6 +372,42 @@ void RgbdImage::warpIntensity(const AffineTransform& transformation, const Point
     result.initialize();
 }
 
+Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation, const PointCloud& reference_pointcloud, 
+                              const Intrinsic& intrinsics)const{
+    
+    // the following line is comment out because AffineTransform is already define as 3 floats 
+    // Eigen::Affine3f new_transformation = transformation.cast<float>();
+    float ox = intrinsics.ox();
+    float oy = intrinsics.oy();
+    int outliers = 0;
+    int num_invalid_z = 0;
+    int N = reference_pointcloud.cols();
+    PointCloud transformed_pointcloud = transformation * reference_pointcloud;
+    Eigen::VectorXf warped_intensities(N);
+    for(size_t idx = 0; idx < N; idx++) {
+        const Eigen::Vector4f& p3d = transformed_pointcloud.col(idx);
+        if(!std::isfinite(p3d(2))) {
+            warped_intensities(idx) = -2;
+            num_invalid_z++;
+            continue;
+        }
+
+        float x_projected = static_cast<float>(p3d(0) * intrinsics.fx() / p3d(2) + ox);
+        float y_projected = static_cast<float>(p3d(1) * intrinsics.fy() / p3d(2) + oy);
+        if(inImage(x_projected, y_projected)) {
+            float z = (float) p3d(2);
+            warped_intensities(idx) = Interpolation::bilinearWithDepth(this->intensity, this->depth, x_projected, y_projected, z);
+        } else {
+            warped_intensities(idx) = -1;
+            outliers++;
+        }
+    }
+    std::cout << "total input points to warp: " << N << std::endl;
+    std::cout << "total number of invalid z: " << num_invalid_z << std::endl;
+    std::cout << "total number of pt out of image: " << outliers << std::endl;
+    return warped_intensities.cast<double>();
+}
+
 void RgbdImage::warpDepthForward(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result, cv::Mat_<cv::Vec3d>& cloud) {
     Eigen::Affine3d transformation_3d = transformation.cast<double>();
 

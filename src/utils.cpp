@@ -106,16 +106,20 @@ T bilinearWithoutDepth(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& i
     T val = 0.0;
     T sum = 0.0;
 
-    val += x0_weight * y0_weight * intensity(y0, x0);
+    std::cout << intensity(x0, y0) << std::endl;
+    val += x0_weight * y0_weight * intensity(x0, y0);
     sum += x0_weight * y0_weight;
 
-    val += x1_weight * y0_weight * intensity(y0, x1);
+    std::cout << intensity(x1, y0) << std::endl;
+    val += x1_weight * y0_weight * intensity(x1, y0);
     sum += x1_weight * y0_weight;
 
-    val += x0_weight * y1_weight * intensity(y1, x0);
+    std::cout << intensity(x0, y1) << std::endl;
+    val += x0_weight * y1_weight * intensity(x0, y1);
     sum += x0_weight * y1_weight;
 
-    val += x1_weight * y1_weight * intensity(y1, x1);
+    std::cout << intensity(x1, y1) << std::endl;
+    val += x1_weight * y1_weight * intensity(x1, y1);
     sum += x1_weight * y1_weight;
     
     return val /= sum;
@@ -125,9 +129,27 @@ template <typename T>
 Eigen::Matrix<T, Eigen::Dynamic, 1> comp_all_intensities(const Eigen::Matrix<T, 2, Eigen::Dynamic> & pixels_img2 , const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& img2_intensity ){
     int N = pixels_img2.cols();
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> intensities(N,1);
+
+    std::cout << "DEBUG before comp_all_intensities loop" << std::endl;
+    std::cout << "DEBUG shape of pixels rows: " << pixels_img2.rows() << " cols: "<<  pixels_img2.cols() << std::endl;
+    std::cout << "DEBUG value of N = " << N << std::endl;
+    std::cout << "DEBUG intensities.cols() = " << intensities.rows() << std::endl;
+
+    // ++++++++++++++ !! To Haoran !! +++++++++++++++++++++++++
+    /* This appears to be the problem:
+        intensities only has 2 cols,
+        but N = 86;
+        Thanks;
+    */
+
     for(int col=0; col<N; col++){
         intensities(col, 0) = bilinearWithoutDepth(img2_intensity, pixels_img2(0, col), pixels_img2(1, col));
+        std::cout << intensities(col, 0) << std::endl; 
+        std::cout << "DEBUG inside comp_all_intesnity loop" << std::endl;
+        // TODO seg fault appeared after 2nd loop 
+        
     }
+    std::cout << "DEBUG after comp_all_intensities loop" << std::endl;
     return intensities;
 }
 
