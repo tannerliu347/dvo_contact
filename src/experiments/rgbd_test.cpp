@@ -15,20 +15,31 @@
 
 void TUM_loader_test() {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
-    auto cur = tum_loader.getNext();
     while (tum_loader.hasNext()) {
-        std::cout << cur.second << std::endl;
+        std::vector<cv::Mat> cur_img = tum_loader.getImgs();
+        dvo::AffineTransform T = tum_loader.getPose();
+        float ts = tum_loader.getTimestamp();
+        std::cout << "=====================\n";
+        std::cout << "Timestamp: " << ts << std::endl;
+        std::cout << "Rotation: " << T.rotation() << std::endl;
+        std::cout << "Translation: " << T.translation() << std::endl;
+        std::cout << "=====================\n";
+        cv::imshow("gray", cur_img[0]);
+        cv::imshow("dept", cur_img[1]);
         cv::waitKey(10);
+        tum_loader.step();
     }
+    std::cout << tum_loader.teleportToFrame(100) << std::endl;
+    auto imgs = tum_loader.getImgs();
 }
 
 
 // test buildPointcloud
 void rgbd_camera_test(std::string file_path) {
     dvo::TUMLoader tum_loader(file_path);
-    auto curImgs = tum_loader.getNext().first;
+    auto curImgs = tum_loader.getImgs();
     for (int i = 0; i < 700; i++)
-        curImgs = tum_loader.getNext().first;
+        curImgs = tum_loader.getImgs();
     cv::imshow("gray", curImgs[0]);
     cv::imshow("meh", curImgs[1]);
     cv::waitKey(0);
@@ -93,12 +104,12 @@ void rgbd_camera_test(std::string file_path) {
 
 void pyramid_test(std::string file_path) {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
-    auto curImgs = tum_loader.getNext();
+    auto curImgs = tum_loader.getImgs();
     dvo::Intrinsic intrins = tum_loader.getIntrinsic();
     dvo::RgbdCamera rCam(640, 480, intrins);
     dvo::CameraPyramid camPyr(rCam);
     camPyr.build(5);
-    dvo::ImagePyramidPtr img_pyramid = camPyr.create(curImgs.first[0], curImgs.first[1]);
+    dvo::ImagePyramidPtr img_pyramid = camPyr.create(curImgs[0], curImgs[1]);
     img_pyramid->build(5);
     for (int i = 0; i < 5; i++) {
         dvo::RgbdImage pyrimg = img_pyramid->level(i);
@@ -108,6 +119,80 @@ void pyramid_test(std::string file_path) {
         cv::imshow("dept", depth);
         cv::waitKey(0);
     }
+}
+
+void warp_test(std::string file_path) {
+    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+    auto curImgs = tum_loader.getImgs();
+    Eigen::Quaternionf quat_ref(-0.3986, 0.6132, 0.5962, -0.3311);
+    Eigen::Translation3f tran_ref(1.3563, 0.6305, 1.6380);
+    Eigen::Affine3f af_ref = tran_ref * quat_ref.toRotationMatrix();
+    Eigen::Quaternionf quat_cur(-0.3980, 0.6129, 0.5966, -0.3316);
+    Eigen::Translation3f tran_cur(1.3543, 0.6306, 1.6360);
+    Eigen::Affine3f af_cur = tran_cur * quat_cur.toRotationMatrix();
+    dvo::AffineTransform T = af_ref.inverse() * af_cur;
+    
+    dvo::Intrinsic intrins = tum_loader.getIntrinsic();
+    dvo::RgbdCamera rCam(640, 480, intrins);
+    dvo::RgbdImagePtr imgPtr = rCam.create(curImgs[0], curImgs[1]);
+    imgPtr->buildPointCloud();
+    dvo::PointCloud pc = imgPtr->point_cloud;
+    dvo::PointCloud transformed_pc;
+    dvo::RgbdImage result_image(rCam);
+    imgPtr->warpIntensity(T, pc, intrins, result_image, transformed_pc);
+    // visualize this pointcloud
+    pangolin::CreateWindowAndBind("Main",640,480);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    pangolin::OpenGlRenderState s_cam(
+            pangolin::ProjectionMatrix(640,480,420,420,320,320,0.2,100),
+            pangolin::ModelViewLookAt(2,0,2, 0,0,0, pangolin::AxisY)
+    );
+    pangolin::OpenGlRenderState s_cam2(
+            pangolin::ProjectionMatrix(640,480,420,420,320,320,0.2,100),
+            pangolin::ModelViewLookAt(2,0,2, 0,0,0, pangolin::AxisY)
+    );
+
+    pangolin::View& d_cam = pangolin::CreateDisplay()
+            .SetBounds(0.0, 1.0, 0.0, 1.0, -640.0f/480.0f)
+            .SetHandler(new pangolin::Handler3D(s_cam));
+    pangolin::View& d_cam2 = pangolin::CreateDisplay()
+            .SetBounds(0.0, 1.0, 0.0, 1.0, -640.0f/480.0f)
+            .SetHandler(new pangolin::Handler3D(s_cam2));
+
+    pangolin::Display("multi")
+            .SetBounds(0.0, 1.0, 0.0, 1.0)
+            .SetLayout(pangolin::LayoutEqual)
+            .AddDisplay(d_cam)
+            .AddDisplay(d_cam2);
+
+    while( !pangolin::ShouldQuit() )
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        d_cam.Activate(s_cam);
+        glBegin( GL_POINTS );
+        glColor3f(1.0,1.0,1.0);
+        std::cout << pc.cols() << std::endl;
+        for (int i = 0; i < 640 * 480; i++) {
+            Eigen::Vector4f point = pc.col(i);
+            glVertex3f(point(0), point(1), point(2));
+        } 
+        glEnd();
+
+        d_cam2.Activate(s_cam2);
+        glBegin( GL_POINTS );
+        glColor3f(1.0,1.0,1.0);
+        std::cout << transformed_pc.cols() << std::endl;
+        for (int i = 0; i < 640 * 480; i++) {
+            Eigen::Vector4f point = transformed_pc.col(i);
+            glVertex3f(point(0), point(1), point(2));
+        } 
+        glEnd();
+        pangolin::FinishFrame();
+    }
+
+
 }
 
 void create_test() {
@@ -139,7 +224,7 @@ void pt_selection_test(YAML::Node config_setting) {
                                
   // load ref image
   std::cout << "loading ref image" << std::endl;
-  auto curImgs_1 = tum_loader.getNext().first;
+  auto curImgs_1 = tum_loader.getImgs();
   dvo::Intrinsic intrins_1 = tum_loader.getIntrinsic();
   dvo::RgbdCamera rCam_1(640, 480, intrins_1);
   // dvo::RgbdImagePtr imgPtr_1 = rCam_1.create(curImgs_1[0], curImgs_1[1]);
@@ -151,7 +236,8 @@ void pt_selection_test(YAML::Node config_setting) {
 
   // load cur image
   std::cout << "loading cur image" << std::endl;
-  auto curImgs_2 = tum_loader.getNext().first;
+  tum_loader.step();
+  auto curImgs_2 = tum_loader.getImgs();
   dvo::Intrinsic intrins_2 = tum_loader.getIntrinsic();
   dvo::RgbdCamera rCam_2(640, 480, intrins_2);
   // dvo::RgbdImagePtr imgPtr_2 = rCam_2.create(curImgs_2[0], curImgs_2[1]);
@@ -232,10 +318,11 @@ int main() {
     
     std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
                                                                 : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
-    // TUM_loader_test();
+    TUM_loader_test();
     // rgbd_camera_test(image_load_path);
 
-    pt_selection_test(config_setting);
+    // pt_selection_test(config_setting);
     // pyramid_test(image_load_path);
+    // warp_test(image_load_path);
     return 0;
 }

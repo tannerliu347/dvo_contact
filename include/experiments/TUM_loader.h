@@ -7,12 +7,16 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
+#include "rgbd_image.h"
 #include "intrinsic.h"
 
 
 namespace dvo {
 
-    
+struct Pose {
+    float tx, ty, tz, qx, qy, qz, qw;
+}; // Pose
+
 class TUMLoader {
 public:
     TUMLoader(std::string TUM_dir);
@@ -23,7 +27,15 @@ public:
      * @brief return the next pair of intensity and depth images,
      * first is a vector of 0: grayscale img, 1: depth image; second is the timestamp
      */
-    std::pair<std::vector<cv::Mat>, float> getNext();
+    std::vector<cv::Mat> getImgs();
+
+    AffineTransform getPose();
+
+    float getTimestamp();
+
+    bool step();
+
+    bool teleportToFrame(int frameNumber);
 
     Intrinsic getIntrinsic();
 
@@ -37,6 +49,7 @@ private:
     std::vector<float> timestamps_;
     std::vector<std::string> rgb_files_;
     std::vector<std::string> dep_files_;
+    std::vector<Pose> trajectory_; 
     Intrinsic cam_calib_;
     size_t idx_;
 };

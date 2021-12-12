@@ -10,22 +10,33 @@ TUMLoader::TUMLoader(std::string TUM_dir) : idx_(0), cam_calib_(525.0, 525.0, 31
     if (!pair_file.is_open()) {
         std::cout << "Unable to open file: " << assoc_file << std::endl;
     }
-    std::string line;
-    while (getline(pair_file, line)) {
-        std::stringstream ss(line);
-        std::string ts, rgb_file, tmp, dep_file;
-        getline(ss, ts, ' ');
-        getline(ss, rgb_file, ' ');
-        getline(ss, tmp, ' ');
-        getline(ss, dep_file, ' ');
-        // std::cout << ts << std::endl;
-        // std::cout << TUM_dir + rgb_file << std::endl;
-        // std::cout << TUM_dir + dep_file << std::endl;
-        // std::cout << "=====================\n";
-        timestamps_.push_back(std::stof(ts));
+
+    float tx, ty, tz, qx, qy, qz, qw;
+    float timestamp, timestamp_rgb, timestamp_depth;
+    std::string rgb_file, dep_file;
+    while (pair_file >> timestamp >> tx >> ty >> tz >> qx >> qy >> qz >> qw >> timestamp_rgb >> rgb_file >> timestamp_depth >> dep_file) {        
+        Pose pose{tx, ty, tz, qx, qy, qz, qw};
+        trajectory_.push_back(pose);
+        timestamps_.push_back(timestamp);
         rgb_files_.push_back(TUM_dir + rgb_file);
         dep_files_.push_back(TUM_dir + dep_file);
     }
+    // std::string line;
+    // while (getline(pair_file, line)) {
+    //     std::stringstream ss(line);
+    //     std::string ts, rgb_file, tmp, dep_file;
+    //     getline(ss, ts, ' ');
+    //     getline(ss, rgb_file, ' ');
+    //     getline(ss, tmp, ' ');
+    //     getline(ss, dep_file, ' ');
+    //     // std::cout << ts << std::endl;
+    //     // std::cout << TUM_dir + rgb_file << std::endl;
+    //     // std::cout << TUM_dir + dep_file << std::endl;
+    //     // std::cout << "=====================\n";
+    //     timestamps_.push_back(std::stof(ts));
+    //     rgb_files_.push_back(TUM_dir + rgb_file);
+    //     dep_files_.push_back(TUM_dir + dep_file);
+    // }
     std::cout << "Successfully found " << timestamps_.size() << " image pairs\n";
     std::cout << "===========================================================\n";
 }
@@ -34,8 +45,8 @@ bool TUMLoader::hasNext() {
     return idx_ < timestamps_.size();
 }
 
-std::pair<std::vector<cv::Mat>, float> TUMLoader::getNext() {
-    std::pair<std::vector<cv::Mat>, float> res;
+std::vector<cv::Mat> TUMLoader::getImgs() {
+    std::vector<cv::Mat> res;
     if (!hasNext()) {
         std::cout << "No available image pairs; Exiting\n";
         return res;
@@ -48,12 +59,37 @@ std::pair<std::vector<cv::Mat>, float> TUMLoader::getNext() {
     grey.convertTo(gray, CV_32FC1);
     cv::Mat dept = depthRawToM(dep);
     
-    res.first.push_back(gray);
-    res.first.push_back(dept);
-    res.second = timestamps_[idx_];
-    idx_++;
+    res.push_back(gray);
+    res.push_back(dept);
     return res;
 }
+
+AffineTransform TUMLoader::getPose() {
+    Pose cp = trajectory_[idx_];
+    Eigen::Quaternionf quat_ref(cp.qw, cp.qx, cp.qy, cp.qz);
+    Eigen::Translation3f tran_ref(cp.tx, cp.ty, cp.tz);
+    AffineTransform af_ref = tran_ref * quat_ref.toRotationMatrix();
+    return af_ref;
+}
+
+float TUMLoader::getTimestamp() {
+    return timestamps_[idx_];
+}
+
+bool TUMLoader::step() {
+    if (idx_ == timestamps_.size() - 1)
+        return false;
+    idx_++;
+    return true;
+}
+
+bool TUMLoader::teleportToFrame(int frameNumber) {
+    if (frameNumber >= timestamps_.size())
+        return false;
+    idx_ = frameNumber;
+    return true;
+}
+
 
 Intrinsic TUMLoader::getIntrinsic() {
     return cam_calib_;
