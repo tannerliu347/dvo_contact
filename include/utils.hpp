@@ -2,6 +2,7 @@
 #include <ceres/rotation.h>
 #include <eigen3/Eigen/Core>
 #include "rgbd_image.h"
+#include <ceres/jet.h>
 
 // X: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
 template <typename T>
@@ -111,6 +112,9 @@ bool check_pixels_in_img(const Eigen::Matrix<T, 2, Eigen::Dynamic>& pixels_img2,
     return true;
 }
 
+//q_t1, q_t2, q_t21 of the form [qw, qx, qy, qz, tx, ty, tz]
+// calculates the 7 parameter quaternion-translation representation of 
+// the relative transform from {2} to {1} (frame transform from {1} to {2})
 template <typename T>
 void calc_transform_from_quaternion(const T* q_t1, const T* q_t2, T* q_t21, bool verbose=false){
     double T1_arr[16];
@@ -140,4 +144,13 @@ void calc_transform_from_quaternion(const T* q_t1, const T* q_t2, T* q_t21, bool
         }
         std::cout << std::endl; 
     }
+}
+
+template <typename T>
+void normalize_quaternion(const T* q){
+    T normalizer = ceres::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    q[0] /= normalizer;
+    q[1] /= normalizer;
+    q[2] /= normalizer;
+    q[3] /= normalizer;
 }

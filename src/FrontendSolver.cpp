@@ -3,9 +3,11 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <ceres/ceres.h>
+#include  <ceres/local_parameterization.h>
 #include <chrono>
 #include <vector>
 #include "utils.hpp"
+#include <math.h>
 using namespace std;
 
 /*
@@ -109,12 +111,15 @@ class PhotometricError_ext {
     
     // std::cout << "After quaternion conversion\n";
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> extrinsics (transform);
-    std::cout << extrinsics;
-    Eigen::VectorXd intensity_in_img2 = img2_.warpIntensity2(extrinsics.cast<float>(), pc1_, img2_.camera().intrinsics());
-    // std::cout << "DEBUG warped intensity" << intensity_in_img2;
-    // std::cout << "DEBUG img1_intensity_" <<img1_intensity_;
-    residual[0] = (intensity_in_img2 - img1_intensity_).norm();
-    // std::cout << "Residual  " << residual[0] << std::endl;  
+    Eigen::VectorXd warped_intensity_in_img2 = img2_.warpIntensity2(extrinsics.cast<float>(), pc1_, img2_.camera().intrinsics());
+    //std::cout << "DEBUG warped intensity" << intensity_in_img2;
+    //std::cout << "DEBUG img1_intensity_" <<img1_intensity_;
+    auto intensity_diff = warped_intensity_in_img2 - img1_intensity_;
+
+    //residual[0] = intensity_diff.norm();
+    residual[0] = cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_);
+    std::cout << "Residual  " << residual[0] << std::endl;  
+    std::cout << "Residual (discard invalid depth) " << cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_) << std::endl; 
     return true;
   }
 
@@ -124,33 +129,41 @@ class PhotometricError_ext {
     const dvo::RgbdImage& img2_; 
 };
 
+double cal_cost_discard_invalid_depth(const Eigen::VectorXd& warped_img2_intensity, const Eigen::VectorXd& img1_intensity){
+    int num_invalid = 0;
+    double cost_squared = 0;
+    double l1_cost = 0;
+    int N =  warped_img2_intensity.rows();
+    for(int i = 0; i < N; i++){
+        //invalid intensities are set to negative
+        if (warped_img2_intensity(i) < 0){
+            num_invalid++;
+            continue;
+        } else{
+            cost_squared += std::pow(warped_img2_intensity(i) - img1_intensity(i), 2);
+            l1_cost += std::abs(warped_img2_intensity(i) - img1_intensity(i));
+        }
+    }
+    std::cout << "intensity RMSE: " << std::sqrt(cost_squared/(N-num_invalid)) <<std::endl;
+    std::cout << "intensity mean err: " << l1_cost/(N-num_invalid) <<std::endl;
+    return std::sqrt(cost_squared);
+}
 
 //Initial guess is a 7 parameter representation of transformation (quaternion, translation) double [7]
-void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& img1_intensity, const dvo::RgbdImage& img2)
+void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& img1_intensity, const dvo::RgbdImage& img2, const double* initial_guess)
 {   
-    // 构建最小二乘问题
     ceres::Problem problem;
     // initial guess of transform: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
-    double transform[7] = {1, 0, 0, 0, 0, 0, 0};
-    /*
-    problem.AddResidualBlock (     // 向问题中添加误差项
-    // 使用自动求导，模板参数：误差类型，输出维度，输入维度，维数要与前面struct中一致
-        new ceres::AutoDiffCostFunction<PhotometricError, 1, 7> ( 
-            new PhotometricError ( pc1, img1_intensity, img2)
-        ),
-        nullptr,            // 核函数，这里不使用，为空
-        transform                 // 待估计参数
-    );
-    */
-    /*
-    problem.AddResidualBlock (
-        new ceres::NumericDiffCostFunction<PhotometricError, ceres::CENTRAL, 1, 7>(
-            new PhotometricError ( pc1, img1_intensity, img2)
-        ),
-        nullptr,
-        transform
-    );
-    */
+    double transform[7];
+    //std::copy(std::begin(initial_guess), std::end(initial_guess), std::begin(transform));
+    std::cout << "initial guess:\n" << std::endl;
+    for(int i = 0; i < 7; i++){
+        transform[i] = initial_guess[i];
+        std::cout <<transform[i] << " ";
+    }
+    std::cout << std::endl;
+    
+
     problem.AddResidualBlock (
         new ceres::NumericDiffCostFunction<PhotometricError_ext, ceres::CENTRAL, 1, 7>(
             new PhotometricError_ext ( pc1, img1_intensity, img2)
@@ -158,20 +171,24 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
         nullptr,
         transform
     );
-    // 配置求解器
-    ceres::Solver::Options options;     // 这里有很多配置项可以填
-    //options.linear_solver_type = ceres::DENSE_QR;  // 增量方程如何求解
-    options.linear_solver_type = ceres::DENSE_QR;  // 增量方程如何求解
-    options.minimizer_progress_to_stdout = true;   // 输出到cout
 
-    ceres::Solver::Summary summary;                // 优化信息
+    //Add quaternion constraint
+    //ceres::QuaternionParameterization*  quaternion_param = new ceres::QuaternionParameterization;
+    //problem.SetParameterization(transform, quaternion_param);
+
+    // configure solver
+    ceres::Solver::Options options;    
+    options.linear_solver_type = ceres::DENSE_QR;  
+    options.minimizer_progress_to_stdout = true;   
+
+    ceres::Solver::Summary summary;               
     chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
-    ceres::Solve ( options, &problem, &summary );  // 开始优化
+    ceres::Solve ( options, &problem, &summary ); 
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>( t2-t1 );
     cout<<"solve time cost = "<<time_used.count()<<" seconds. "<<endl;
 
-    // 输出结果
+    // solver output
     cout<<summary.FullReport() <<endl;
     cout<<"estimated transform";
     for ( auto t:transform ) cout<< t <<" ";

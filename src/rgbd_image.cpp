@@ -396,7 +396,7 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
     for(size_t idx = 0; idx < N; idx++) {
         const Eigen::Vector4f& p3d = transformed_pointcloud.col(idx);
         if(!std::isfinite(p3d(2))) {
-            warped_intensities(idx) = -2;
+            warped_intensities(idx) = -1.0f;
             num_invalid_z++;
             continue;
         }
@@ -407,7 +407,7 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
             float z = (float) p3d(2);
             warped_intensities(idx) = Interpolation::bilinearWithDepth(this->intensity, this->depth, x_projected, y_projected, z);
         } else {
-            warped_intensities(idx) = -1;
+            warped_intensities(idx) = -1.0f;
             outliers++;
         }
     }

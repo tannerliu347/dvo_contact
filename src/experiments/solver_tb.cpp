@@ -87,15 +87,6 @@ int main()
     // img2.png 1341839847.2712 // tx = -2.3366 ty = -2.1170 tz = 1.9314   
                                 // qx = 0.9437 qy = 0.0751 qz = 0.0092 qw = -0.3221
     
-    //double q_t1[7] = {-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327};
-    //double q_t2[7] = {-0.3221, 0.9437, 0.0751, 0.0092, -2.3366, -2.1170, 1.9314};
-
-    double q_t1[7] = {1, 0, 0, 0, 1, 2, 3};
-    double q_t2[7] = {1, 0, 0, 0, 0.5, 1.5, 2.5};
-    // double q_tdiff;
-    double q_21[7] = {};
-    calc_transform_from_quaternion(q_t1, q_t2, q_21, true);
-
     string cwd = get_current_dir_name();
     cout << "cwd = " << cwd <<endl;
     
@@ -222,7 +213,7 @@ int main()
     vector<Point2i> kept_kps;
     // discard all surrounding key points
     // keep_points() first argument is a hyper parameter between 0-0.5
-    keep_points(0.4, cam_width, cam_height, kps, kept_kps);
+    keep_points(0.3, cam_width, cam_height, kps, kept_kps);
 
     int kept_kps_size = kept_kps.size();
     dvo::PointCloud kept_pts_pc(4, kept_kps_size);
@@ -272,7 +263,15 @@ int main()
     // std::cout << "width: " << img2.width << std::endl;
     // std::cout << "height: " << img2.height << std::endl;
     //solver.solve(kept_pts_pc, img1_kp_intensity, img2);
-    //solver.solve(non_zero_pc, non_zero_intensity, img2);
+
+    //relative quat 0.999877, 0.00273213, -0.0143958, -0.00556205, 0.00192522, 0.119313, -0.0928132
+    double q_t1[7] = {-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327};
+    double q_t2[7] = {-0.3221, 0.9437, 0.0751, 0.0092, -2.3366, -2.1170, 1.9314};
+    double q_21[7] = {};
+    calc_transform_from_quaternion(q_t1, q_t2, q_21, true);
+    double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    //double q_test[7] = {1.0, 0.0, 0.0, 0.0, 0.00192522, 0.119313, -0.0928132};
+    solver.solve(non_zero_pc, non_zero_intensity, img2, q_21);
     
 
 
