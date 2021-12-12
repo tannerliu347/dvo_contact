@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <eigen3/Eigen/Geometry>
+// #include <boost/smart_ptr.hpp>
 #include "intrinsic.h"
 
 namespace dvo {
@@ -61,7 +62,9 @@ typedef std::shared_ptr<ImagePyramid> ImagePyramidPtr;
 class RgbdCamera {
 public:
     RgbdCamera(size_t width, size_t height, const dvo::Intrinsic& intrinsics);
-    ~RgbdCamera() {}
+    ~RgbdCamera() {
+        std::cout << "Destruct Rgbd Camera Object" << std::endl;
+    }
 
     size_t width() const;
     size_t height() const;
@@ -142,7 +145,8 @@ public:
     cv::Mat rgb;
 
     PointCloud point_cloud;
-    cv::Mat_<Vector8f> acceleration;
+    // cv::Mat_<Vector8f> acceleration;
+    bool acceleration_requires_calculation_;
 
     size_t width, height;
     double timestamp;

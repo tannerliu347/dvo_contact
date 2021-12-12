@@ -11,9 +11,9 @@ class PtSelectionVerify
 public:
   virtual ~PtSelectionVerify() {}
   // (x, y): point position in image; z: depth; i: intensity;
-  // didx (didy): intensity gradient along x (y);
-  // dzdx (didy): intensity gradient along x (y);
-  virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const = 0;
+  // idx (idy): intensity gradient along x (y);
+  // ddx (ddy): intensity gradient along x (y);
+  virtual bool isPointOk(const size_t& x, const size_t& y, const float& d, const float& idx, const float& idy, const float& ddx, const float& ddy) const = 0;
 };
 
 // Valid point verification:
@@ -22,11 +22,11 @@ class PtVerify : public PtSelectionVerify
 public:
   virtual ~PtVerify() {}
   // (x, y): point position in image; z: depth; i: intensity;
-  // didx (didy): intensity gradient along x (y);
-  // dzdx (didy): intensity gradient along x (y);
-  virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const
+  // idx (idy): intensity gradient along x (y);
+  // ddx (ddy): intensity gradient along x (y);
+  virtual bool isPointOk(const size_t& x, const size_t& y, const float& d, const float& idx, const float& idy, const float& ddx, const float& ddy) const
   {
-    return 1;
+    return d == d && ddx == ddx && ddy == ddy; // Delete NaN data
   }
 };
 
@@ -46,11 +46,12 @@ public:
   virtual ~PtAndGradVerify() {}
 
   // (x, y): point position in image; z: depth; i: intensity;
-  // didx (didy): intensity gradient along x (y);
-  // dzdx (didy): intensity gradient along x (y);
-  virtual bool isPointOk(const size_t& x, const size_t& y, const float& z, const float& idx, const float& idy, const float& ddx, const float& ddy) const
+  // idx (idy): intensity gradient along x (y);
+  // ddx (ddy): intensity gradient along x (y);
+  virtual bool isPointOk(const size_t& x, const size_t& y, const float& d, const float& idx, const float& idy, const float& ddx, const float& ddy) const
   {
-    return (std::abs(idx) > intensity_threshold || std::abs(idy) > intensity_threshold || std::abs(ddx) > depth_threshold ||  std::abs(ddy) > depth_threshold);
+    // Delete NaN data
+    return d == d && ddx == ddx && ddy == ddy && ( std::abs(idx) > intensity_threshold || std::abs(idy) > intensity_threshold || std::abs(ddx) > depth_threshold ||  std::abs(ddy) > depth_threshold);
   }
 };
 

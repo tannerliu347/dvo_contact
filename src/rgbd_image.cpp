@@ -74,7 +74,9 @@ CameraPyramid::CameraPyramid(size_t base_width, size_t base_height, const dvo::I
     levels_.push_back(std::make_shared<RgbdCamera>(base_width, base_height, base_intrinsics));
 }
 
-CameraPyramid::~CameraPyramid() {}
+CameraPyramid::~CameraPyramid() {
+    // std::cout << "Destruct CameraPyramid" << std::endl;
+}
 
 ImagePyramidPtr CameraPyramid::create(const cv::Mat& base_intensity, const cv::Mat& base_depth) {
     return std::make_shared<ImagePyramid>(*this, base_intensity, base_depth);
@@ -110,14 +112,41 @@ ImagePyramid::ImagePyramid(CameraPyramid& camera, const cv::Mat& intensity, cons
     levels_.push_back(camPyr_.level(0).create(intensity, depth));
 }
 
-ImagePyramid::~ImagePyramid() {}
+ImagePyramid::~ImagePyramid() {
+    // std::cout << "Destruct Image Pyramid" << std::endl;
+}
+
+
+// static smooth and subsample
+static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out) {
+    out.create(cv::Size(in.cols / 2, in.rows / 2), in.type());
+    for (int i = 0; i < out.rows; i++) {
+        for (int j = 0; j < out.cols; j++) {
+            int j0 = j * 2;
+            int j1 = j0 + 1;
+            int i0 = i * 2;
+            int i1 = i0 + 1;
+            out.at<float>(i, j) = (in.at<float>(i0, j0) + in.at<float>(i0, j1) + in.at<float>(i1, j0) + in.at<float>(i1, j1)) / 4.0f;
+        }
+    }
+}
+
+static void pyrDownsample(const cv::Mat& in, cv::Mat& out) {
+    out.create(cv::Size(in.cols / 2, in.rows / 2), in.type());
+    for (int i = 0; i < out.rows; i++) {
+        for (int j = 0; j < out.cols; j++) {
+            out.at<float>(i, j) = in.at<float>(i * 2, j * 2);
+        }
+    }
+}
 
 void ImagePyramid::build(const size_t num_levels) {
     if (levels_.size() >= num_levels) return;
     size_t start = levels_.size();
     for (size_t i = start; i < num_levels; i++) {
         levels_.push_back(camPyr_.level(i).create());
-        //TODO: add smooth and subsample for intensity and depth
+        pyrDownsample(levels_[i - 1]->depth, levels_[i]->depth);
+        pyrMeanDownsample(levels_[i - 1]->intensity, levels_[i]->intensity);
         levels_[i]->initialize();
     }
 }
@@ -131,28 +160,6 @@ double ImagePyramid::timestamp() const {
     return !levels_.empty() ? levels_[0]->timestamp : 0.0;
 }
 
-// static smooth and subsample
-static void pyrMeanDownsample(const cv::Mat& in, cv::Mat& out) {
-    out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
-    for (int i = 0; i < out.rows; i++) {
-        for (int j = 0; j < out.cols; j++) {
-            int j0 = j * 2;
-            int j1 = j0 + 1;
-            int i0 = i * 2;
-            int i1 = i0 + 1;
-            out.at<float>(i, j) = (in.at<float>(i0, j0) + in.at<float>(i0, j1) + in.at<float>(i1, j0) + in.at<float>(i1, j1)) / 4.0f;
-        }
-    }
-}
-
-static void pyrDownsample(const cv::Mat& in, cv::Mat& out) {
-    out.create(cv::Size(in.size().width / 2, in.size().height / 2), in.type());
-    for (int i = 0; i < out.rows; i++) {
-        for (int j = 0; j < out.cols; j++) {
-            out.at<float>(i, j) = in.at<float>(i * 2, j * 2);
-        }
-    }
-}
 
 // ----------------------------- ImagePyramid ----------------------------------------
 
@@ -163,10 +170,13 @@ RgbdImage::RgbdImage(const RgbdCamera& camera) :
     intensity_requires_calculation_(true),
     depth_requires_calculation_(true),
     pointcloud_requires_build_(true),
+    acceleration_requires_calculation_(true),
     width(0),
     height(0) {}
 
-RgbdImage::~RgbdImage() {}
+RgbdImage::~RgbdImage() {
+    // std::cout << "Destruct RgbdImage" << std::endl;
+}
 
 const RgbdCamera& RgbdImage::camera() const
 {
@@ -226,7 +236,7 @@ void RgbdImage::calculateDerivativeX(const cv::Mat& img, cv::Mat& result) {
             int prev = std::max(j - 1, 0);
             int next = std::min(j + 1, img.cols - 1);
             // TODO: why times 0.5 here?
-            result.at<float>(i, j) = (img.at<float>(i, next) - img.at<float>(i, prev)) * 0.5f;
+            result.at<float>(i, j) = (float) (img.at<float>(i, next) - img.at<float>(i, prev)) * 0.5f;
         }
     }
 }
@@ -239,7 +249,7 @@ void RgbdImage::calculateDerivativeY(const cv::Mat& img, cv::Mat& result) {
             int prev = std::max(i - 1, 0);
             int next = std::min(i + 1, img.rows - 1);
             // TODO: why times 0.5 here?
-            result.at<float>(i, j) = (img.at<float>(next, j) - img.at<float>(prev, j)) * 0.5f;
+            result.at<float>(i, j) = (float) (img.at<float>(next, j) - img.at<float>(prev, j)) * 0.5f;
         }
     }
 }
@@ -249,6 +259,7 @@ void RgbdImage::calculateIntensityDerivatives() {
     assert(hasIntensity());
     calculateDerivativeX(intensity, intensity_dx);
     calculateDerivativeY(intensity, intensity_dy);
+    
     intensity_requires_calculation_ = false;
 }
 
@@ -257,6 +268,7 @@ void RgbdImage::calculateDepthDerivatives() {
     assert(hasDepth());
     calculateDerivativeX(depth, depth_dx);
     calculateDerivativeY(depth, depth_dy);
+    
     depth_requires_calculation_ = false;
 }
 
@@ -265,7 +277,6 @@ void RgbdImage::calculateDerivatives() {
     calculateDepthDerivatives();
 }
 
-// TODO: please check again to make sure this function is written correctly to combine RgbdCamera::buildPointCould() and RgbdImage::buildPointCould()
 void RgbdImage::buildPointCloud() {
     if(!pointcloud_requires_build_) return;
 
@@ -309,11 +320,9 @@ void RgbdImage::calculateNormals() {
 }
 
 void RgbdImage::buildAccelerationStructure() {
-    if(acceleration.total() == 0) {
+    if (acceleration_requires_calculation_) {
         calculateDerivatives();
-        cv::Mat zeros = cv::Mat::zeros(intensity.size(), intensity.type());
-        cv::Mat channels[8] = {intensity, depth, intensity_dx, intensity_dy, depth_dx, depth_dy, zeros, zeros};
-        cv::merge(channels, 8, acceleration);
+        acceleration_requires_calculation_ = false;
     }
 }
 
