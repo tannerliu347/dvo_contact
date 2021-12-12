@@ -6,3 +6,4 @@ dataset/*
 config/config.yaml
 pangolin
 Pangolin
+g2o/*

@@ -98,3 +98,15 @@ add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_t
 target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES})  
 #add_executable( solver_test ${PROJECT_SOURCE_DIR}/src/experiments/solver_test.cpp)
 #target_link_libraries( solver_test PUBLIC ${PROJECT_NAME}_frontend_solver ${PROJECT_NAME}_rgbd )    
+
+find_package( G2O )
+include_directories( ${G2O_INCLUDE_DIRS} ) 
+
+include_directories( "/usr/include/eigen3" )
+
+set( G2O_LIBS 
+    g2o_core g2o_types_sba g2o_solver_csparse g2o_stuff g2o_csparse_extension 
+)
+
+add_executable( direct_sparse direct_sparse.cpp )
+target_link_libraries( direct_sparse ${OpenCV_LIBS} ${G2O_LIBS} )
