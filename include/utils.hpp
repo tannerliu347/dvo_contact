@@ -1,13 +1,7 @@
 #include <ceres/ceres.h>
+#include <ceres/rotation.h>
 #include <eigen3/Eigen/Core>
 #include "rgbd_image.h"
-#include  <ceres/jet.h>
-/*
-template <typename T>
-using MatrixXT = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
-template <typename T>
-using Matrix3T = Eigen::Matrix<T, 3, 3>;
-*/
 
 // X: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
 template <typename T>
@@ -35,54 +29,7 @@ void Convert7ParameterQuaternionRepresentationIntoMatrix(const T* X, T* XM){
 	XM[13] = T(0);
 	XM[14] = T(0);
 	XM[15] = T(1);
-
 }
-
-/*
-float bilinearWithDepth(const MatrixXT& intensity, const MatrixXT& depth, const float& x, const float& y, const float& z) {
-    const int x0 = static_cast<int>(std::floor(x));
-    const int y0 = static_cast<int>(std::floor(y));
-    const int x1 = x0 + 1;
-    const int y1 = y0 + 1;
-
-    if(x1 >= intensity.cols || y1 >= intensity.rows) return Invalid;
-    
-    const float x1_weight = x - x0;
-    const float x0_weight = 1.0f - x1_weight;
-    const float y1_weight = y - y0;
-    const float y0_weight = 1.0f - y1_weight;
-    const float z_eps = z - 0.05f;
-
-    float val = 0.0f;
-    float sum = 0.0f;
-
-    if(std::isfinite(depth.at<float>(y0, x0)) && depth.at<float>(y0, x0) > z_eps) {
-        val += x0_weight * y0_weight * intensity.at<float>(y0, x0);
-        sum += x0_weight * y0_weight;
-    }
-
-    if(std::isfinite(depth.at<float>(y0, x1)) && depth.at<float>(y0, x1) > z_eps) {
-        val += x1_weight * y0_weight * intensity.at<float>(y0, x1);
-        sum += x1_weight * y0_weight;
-    }
-
-    if(std::isfinite(depth.at<float>(y1, x0)) && depth.at<float>(y1, x0) > z_eps) {
-        val += x0_weight * y1_weight * intensity.at<float>(y1, x0);
-        sum += x0_weight * y1_weight;
-    }
-
-    if(std::isfinite(depth.at<float>(y1, x1)) && depth.at<float>(y1, x1) > z_eps) {
-        val += x1_weight * y1_weight * intensity.at<float>(y1, x1);
-        sum += x1_weight * y1_weight;
-    }
-
-    if(sum > 0.0f) {
-        val /= sum;
-    } else {
-        val = Invalid;
-    }
-}
-*/
 
 template <typename T>
 T bilinearWithoutDepth(const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& intensity, const T& x, const T& y) {
@@ -162,4 +109,35 @@ bool check_pixels_in_img(const Eigen::Matrix<T, 2, Eigen::Dynamic>& pixels_img2,
         }
     }
     return true;
+}
+
+template <typename T>
+void calc_transform_from_quaternion(const T* q_t1, const T* q_t2, T* q_t21, bool verbose=false){
+    double T1_arr[16];
+    double T2_arr[16];
+    Convert7ParameterQuaternionRepresentationIntoMatrix(q_t1, T1_arr);
+    Convert7ParameterQuaternionRepresentationIntoMatrix(q_t2, T2_arr);
+    Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T1 (T1_arr);
+    Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T2 (T2_arr);
+    //Transform that represents frame 1 in frame 2
+    auto T21 = T2.inverse() * T1;
+    if(verbose){
+        std::cout << "T21: \n";
+        std::cout << T21 << std::endl;
+    }
+    Eigen::Quaterniond q(T21.block<3,3>(0, 0));
+    q_t21[0] = q.w();
+    q_t21[1] = q.x();
+    q_t21[2] = q.y();
+    q_t21[3] = q.z();
+    q_t21[4] = T21(0, 3);
+    q_t21[5] = T21(1, 3);
+    q_t21[6] = T21(2, 3);
+    if(verbose){
+        std::cout << "relative quaternion\n";
+        for(int i = 0; i < 7; i++){
+            std::cout << q_t21[i] << ", ";
+        }
+        std::cout << std::endl; 
+    }
 }

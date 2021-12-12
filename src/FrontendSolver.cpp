@@ -3,10 +3,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <ceres/ceres.h>
-#include <ceres/rotation.h>
 #include <chrono>
 #include <vector>
-#include "utils.cpp"
+#include "utils.hpp"
 using namespace std;
 
 /*

@@ -76,7 +76,7 @@ target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
 add_library(${PROJECT_NAME}_TUM_loader SHARED ${PROJECT_SOURCE_DIR}/src/experiments/TUM_loader.cpp)
 target_link_libraries(${PROJECT_NAME}_TUM_loader PUBLIC ${PROJECT_NAME}_rgbd
                                                         ${OpenCV_LIBS}) 
-                          
+        
 #add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)                
 add_library(${PROJECT_NAME}_frontend_solver SHARED ${PROJECT_SOURCE_DIR}/src/FrontendSolver.cpp)
 target_link_libraries( ${PROJECT_NAME}_frontend_solver PUBLIC Eigen3::Eigen 
