@@ -16,7 +16,7 @@
 
 #include "rgbd_image.h"
 #include "FrontendSolver.h"
-#include "utils.cpp"
+//#include "utils.cpp"
 // img1.png 1341839846.7712 // tx = -2.3142 ty = -2.2665 tz = 1.9327   
                             // qx = 0.9424 qy = 0.0850 qz = -0.0028 qw = -0.3235
 
@@ -86,6 +86,7 @@ int main()
 
     // img2.png 1341839847.2712 // tx = -2.3366 ty = -2.1170 tz = 1.9314   
                                 // qx = 0.9437 qy = 0.0751 qz = 0.0092 qw = -0.3221
+    /*
     double q_t1[7] = {-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327};
     double q_t2[7] = {-0.3221, 0.9437, 0.0751, 0.0092, -2.3142, -2.2665, 1.9327};
     // double q_tdiff;
@@ -97,6 +98,7 @@ int main()
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T1 (T1_arr);
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T2 (T2_arr);
     std::cout << T2.inverse() * T1;
+    */
     string cwd = get_current_dir_name();
     cout << "cwd = " << cwd <<endl;
     

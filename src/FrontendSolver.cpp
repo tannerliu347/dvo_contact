@@ -59,11 +59,9 @@ class PhotometricError {
     int N = pc1_.cols(); //number of selected points
     L transform[16];
     //transform quaternion-trans parametrization to matrix 
-    Convert7ParameterQuaternionRepreseEigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T1 (T1_arr);ntationIntoMatrix<L>(quat_trans, transform);
+    Convert7ParameterQuaternionRepresentationIntoMatrix<L>(quat_trans, transform);
     //TODO, verify T[16] to Eigen matrix conversion
     //Extrinsics: 4 x 4 matrix
-    
-    //std::cout << "After quaternion conversion\n";
     Eigen::Map<const Eigen::Matrix<L, 4, 4, Eigen::RowMajor>> extrinsics (transform);
     // std::cout << "After mapping extrinsics\n";
     //transform point cloud to camera 2 image plane through extrinsics and intrinsics

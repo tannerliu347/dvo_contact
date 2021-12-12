@@ -52,14 +52,6 @@ std::vector<cv::Mat> TUMLoader::getImgs() {
         return res;
     }
     // read images using the directory
-<<<<<<< HEAD
-    cv::Mat gray = cv::imread(rgb_files_[idx_], cv::IMREAD_GRAYSCALE);
-    cv::Mat dept = cv::imread(dep_files_[idx_], cv::IMREAD_ANYDEPTH); //TODO: check if this is correct 
-    res.first.push_back(gray);
-    res.first.push_back(dept);
-    res.second = timestamps_[idx_];
-    idx_++;
-=======
     cv::Mat grey = cv::imread(rgb_files_[idx_], cv::IMREAD_GRAYSCALE);
     cv::Mat dep = cv::imread(dep_files_[idx_], cv::IMREAD_ANYDEPTH);
     // Both gray scale and depth use CV_32FC1
@@ -69,7 +61,6 @@ std::vector<cv::Mat> TUMLoader::getImgs() {
     
     res.push_back(gray);
     res.push_back(dept);
->>>>>>> b7ba544171634b76517f7e3cbe1dac9b3d5dae70
     return res;
 }
 
