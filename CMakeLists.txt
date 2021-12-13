@@ -17,7 +17,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
-find_package(Pangolin 0.4 REQUIRED)
+#find_package(Pangolin 0.4 REQUIRED)
 find_package(Ceres REQUIRED )
 
 # Yaml:
@@ -64,7 +64,7 @@ mark_as_advanced(YAMLCPP_INCLUDE_DIR YAMLCPP_LIBRARY)
 
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/include/experiments
-                    ${Pangolin_INCLUDE_DIRS}
+                    #${Pangolin_INCLUDE_DIRS}
                     ${CERES_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
@@ -99,14 +99,14 @@ target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LI
 #add_executable( solver_test ${PROJECT_SOURCE_DIR}/src/experiments/solver_test.cpp)
 #target_link_libraries( solver_test PUBLIC ${PROJECT_NAME}_frontend_solver ${PROJECT_NAME}_rgbd )    
 
-find_package( G2O )
-include_directories( ${G2O_INCLUDE_DIRS} ) 
+#find_package( G2O )
+#include_directories( ${G2O_INCLUDE_DIRS} ) 
 
-include_directories( "/usr/include/eigen3" )
+#include_directories( "/usr/include/eigen3" )
 
-set( G2O_LIBS 
-    g2o_core g2o_types_sba g2o_solver_csparse g2o_stuff g2o_csparse_extension 
-)
+#set( G2O_LIBS 
+#    g2o_core g2o_types_sba g2o_solver_csparse g2o_stuff g2o_csparse_extension 
+#)
 
-add_executable( direct_sparse direct_sparse.cpp )
-target_link_libraries( direct_sparse ${OpenCV_LIBS} ${G2O_LIBS} )
+#add_executable( direct_sparse ${PROJECT_SOURCE_DIR}/src/slambook_utils/direct_sparse.cpp )
+#target_link_libraries( direct_sparse ${OpenCV_LIBS} ${G2O_LIBS} )

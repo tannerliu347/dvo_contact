@@ -264,16 +264,24 @@ int main()
     // std::cout << "height: " << img2.height << std::endl;
     //solver.solve(kept_pts_pc, img1_kp_intensity, img2);
 
+
     //relative quat 0.999877, 0.00273213, -0.0143958, -0.00556205, 0.00192522, 0.119313, -0.0928132
     double q_t1[7] = {-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327};
     double q_t2[7] = {-0.3221, 0.9437, 0.0751, 0.0092, -2.3366, -2.1170, 1.9314};
     double q_21[7] = {};
     calc_transform_from_quaternion(q_t1, q_t2, q_21, true);
-    double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    //double q_test[7] = {1.0, 0.0, 0.0, 0.0, 0.00192522, 0.119313, -0.0928132};
+    double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.00001, 0.0, 0.0};
+    double q_test[7] = {1.0, 0.0, 0.0, 0.0, 0.00192522, 0.119313, -0.0928132};
+    double q_test2[7] = {0.999877, 0.0028, -0.015, -0.00556205, 0.0018, 0.13, -0.11};
+    double q_test_nasty[7] = {0.999877, 0.0028, -0.015, -0.00556205, 0.0018, 0.13, -0.11};
     solver.solve(non_zero_pc, non_zero_intensity, img2, q_21);
     
-
+    /*
+    Cost:
+Initial                          1.123505e+06
+Final                            2.933711e+05
+Change                           8.301341e+05
+    */
 
     // for plotting verifications
     /*
