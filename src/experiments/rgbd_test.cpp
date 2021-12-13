@@ -16,6 +16,7 @@
 
 void TUM_loader_test() {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+    int i = 0;
     while (tum_loader.hasNext()) {
         std::vector<cv::Mat> cur_img = tum_loader.getImgs();
         dvo::AffineTransform T = tum_loader.getPose();
@@ -24,12 +25,15 @@ void TUM_loader_test() {
         std::cout << "Timestamp: " << ts << std::endl;
         std::cout << "Rotation: " << T.rotation() << std::endl;
         std::cout << "Translation: " << T.translation() << std::endl;
+        std::cout << i << std::endl;
         std::cout << "=====================\n";
         cv::imshow("gray", cur_img[0]);
         cv::imshow("dept", cur_img[1]);
         cv::waitKey(10);
         tum_loader.step();
+        i++;
     }
+    std::cout << i << std::endl;
     std::cout << tum_loader.teleportToFrame(100) << std::endl;
     auto imgs = tum_loader.getImgs();
 }
@@ -314,7 +318,7 @@ void solver_test() {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
     tum_loader.teleportToFrame(780);
     // save to trajectory
-    std::ofstream out_file("/home/tannerliu/dvo_contact/trajectory.txt")
+    std::ofstream out_file("/home/tannerliu/dvo_contact/trajectory.txt");
 
     // solver
     dvo::Solver g2o_solver;
@@ -399,8 +403,8 @@ int main() {
     
     std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
                                                                 : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
-    // TUM_loader_test();
-    solver_test();
+    TUM_loader_test();
+    // solver_test();
     // rgbd_camera_test(image_load_path);
 
     // pt_selection_test(config_setting);

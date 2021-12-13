@@ -77,7 +77,7 @@ float TUMLoader::getTimestamp() {
 }
 
 bool TUMLoader::step() {
-    if (idx_ == timestamps_.size() - 1)
+    if (idx_ == timestamps_.size())
         return false;
     idx_++;
     return true;
