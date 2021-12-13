@@ -27,17 +27,21 @@ size_t PYRAMID_LEVEL = 3;
 size_t cam_width = 640;
 size_t cam_height = 480;
 
-int main ()
+int main (int argc, char* argv[])
 {
+    std::string dataset_dir(argv[1]);
     std::string cwd = get_current_dir_name();
     std::string TUM_dir = cwd;  // place holder, not sure about what associated.txt is 
     
     dvo::TUMLoader loader(TUM_dir);
+    std::cout << "DEBUG loader initialized SUCCESSFUL" << std::endl;
 
     char resolved_path[PATH_MAX];
     char* tmp = realpath("../", resolved_path);
     std::cout << resolved_path << std::endl;
     YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
+    std::cout << "DEBUG loading yaml config SUCCESSFUL" << std::endl;
+
 
     // size_t cam_width, cam_height;
     // need cam_width and cam_height from loader
@@ -45,10 +49,12 @@ int main ()
     dvo::Intrinsic cam_intrinsic = loader.getIntrinsic(); // did not see cam_calib_ in other parts of the code
 
     dvo::RgbdCamera camera(cam_width, cam_height, cam_intrinsic);
-    dvo::CameraPyramid cam_pyramid(camera);
     
     // template <typename T>
     // std::vector<T> solved_quat_results;
+    dvo::CameraPyramid cam_pyramid(camera);
+    dvo::CameraPyramid* cam_pointer = &cam_pyramid; // non-elegant fix for const reference
+
 
     cv::Mat previous_intensity, current_intensity;
     cv::Mat previous_depth, current_depth;
@@ -63,9 +69,12 @@ int main ()
     dvo::PtAndGradVerify pt_verifier;
     pt_verifier.intensity_threshold = config_setting["dvo"]["intensity_threshold"].as<float>();
     pt_verifier.depth_threshold = config_setting["dvo"]["depth_threshold"].as<float>();
+    
+    std::cout << "DEBUG all essential parameters build SUCCESSFUL" << std::endl;
 
     while (loader.hasNext())
     {
+        
         loader.step();
         current_img = loader.getImgs();
         current_intensity = current_img[0];
@@ -79,7 +88,7 @@ int main ()
         // solver(PointCloud pc, Eigen::VectorXd intensity, RgbdImage im2)
         
         dvo::AffineTransform R = loader.getPose(); // not sure for what 
-        dvo::ImagePyramid previous_pyramid(camera, previous_intensity, previous_depth);
+        dvo::ImagePyramid previous_pyramid((*cam_pointer), previous_intensity, previous_depth);
         // img_pyramid.build(PYRAMID_LEVEL); // no need
         
         dvo::PtSelection point_selecter(previous_pyramid, pt_verifier);
@@ -97,19 +106,24 @@ int main ()
             {
                 float x, y, z;
                 x = it->x;  y = it->y; z = it->z;
-                Eigen::Vector4f tmp_col {{x, y, z, 1.f}};
+                Eigen::Vector4f tmp_col;
+                tmp_col << x, y, z, 1.f;
                 pc.col(idx) = tmp_col;
                 intensity(idx) = it->i;
                 idx++;
             }
 
-            (point_selecter.getImagePyramid()->level(op_level)); //place holder, this is the img2 parameter prepared for solver
-
+            (point_selecter.getImagePyramid().level(op_level)); //place holder, this is the img2 parameter prepared for solver
+            
+            /*
+            reserved space for iteratively calling the solver;
+            using identity as initial guess for pyramid_level = 2;
+            using result from pyramid_level = 2 for 
+            */
 
         }
 
         
-
         
 
 
