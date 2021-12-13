@@ -12,12 +12,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Pangolin 0.4 REQUIRED)
+find_package(G2O REQUIRED)
+
+# G2O
+set( G2O_LIBS 
+    g2o_core g2o_types_sba g2o_solver_csparse g2o_stuff g2o_csparse_extension)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 # Yaml:
 find_library(Yaml_cpp_LIBRARY yaml-cpp /usr/local/include/yaml-cpp/)
@@ -63,7 +70,9 @@ mark_as_advanced(YAMLCPP_INCLUDE_DIR YAMLCPP_LIBRARY)
 
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/include/experiments
-                    ${Pangolin_INCLUDE_DIRS})
+                    ${Pangolin_INCLUDE_DIRS}
+                    ${G2O_INCLUDE_DIRS}
+                    ${EIGEN3_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/intrinsic.cpp
@@ -71,12 +80,18 @@ add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/point_selection.cpp)
 target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
 
+add_library(${PROJECT_NAME}_solver SHARED ${PROJECT_SOURCE_DIR}/src/solver.cpp)
+target_link_libraries(${PROJECT_NAME}_solver PUBLIC ${OpenCV_LIBS}
+                                                    ${PROJECT_NAME}_rgbd
+                                                    ${G2O_LIBS})
+
 add_library(${PROJECT_NAME}_TUM_loader SHARED ${PROJECT_SOURCE_DIR}/src/experiments/TUM_loader.cpp)
 target_link_libraries(${PROJECT_NAME}_TUM_loader PUBLIC ${PROJECT_NAME}_rgbd
                                                         ${OpenCV_LIBS})
 
 add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
 target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
+                                       ${PROJECT_NAME}_solver
                                        ${PROJECT_NAME}_TUM_loader
                                        ${OpenCV_LIBS}
                                        ${Yaml_cpp_LIBRARY}

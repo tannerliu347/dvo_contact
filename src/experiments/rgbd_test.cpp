@@ -2,6 +2,7 @@
 #include "TUM_loader.h"
 #include "yaml-cpp/yaml.h"
 #include "point_selection.h"
+#include "solver.h"
 
 #include <eigen3/Eigen/Core>
 #include <opencv2/core.hpp>
@@ -309,6 +310,86 @@ void pt_selection_test(YAML::Node config_setting) {
 
 }
 
+void solver_test() {
+    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+    tum_loader.teleportToFrame(780);
+    // save to trajectory
+    std::ofstream out_file("/home/tannerliu/dvo_contact/trajectory.txt")
+
+    // solver
+    dvo::Solver g2o_solver;
+    
+    char resolved_path[PATH_MAX];
+    char* tmp = realpath("../", resolved_path);
+    std::cout << resolved_path << std::endl;
+    YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
+
+    size_t cam_width = config_setting["dvo"]["image_width"].as<size_t>();
+    size_t cam_height = config_setting["dvo"]["image_height"].as<size_t>();
+    // need cam_width and cam_height from loader
+
+    dvo::Intrinsic cam_intrinsic = tum_loader.getIntrinsic(); // did not see cam_calib_ in other parts of the code
+
+    dvo::RgbdCamera camera(cam_width, cam_height, cam_intrinsic);
+    dvo::CameraPyramid cam_pyramid(camera);
+
+    cv::Mat previous_intensity, current_intensity;
+    cv::Mat previous_depth, current_depth;
+    
+    std::vector<cv::Mat> previous_img(2);
+    std::vector<cv::Mat> current_img(2);
+
+    previous_img = tum_loader.getImgs();
+    previous_intensity = previous_img[0];
+    previous_depth = previous_img[1];
+
+    dvo::PtAndGradVerify pt_verifier;
+    pt_verifier.intensity_threshold = config_setting["dvo"]["intensity_threshold"].as<float>();
+    pt_verifier.depth_threshold = config_setting["dvo"]["depth_threshold"].as<float>();
+
+    while (tum_loader.hasNext())
+    {
+        tum_loader.step();
+        current_img = tum_loader.getImgs();
+        current_intensity = current_img[0];
+        current_depth = current_img[1];
+
+        dvo::RgbdImage current_rgbd(camera);
+        current_rgbd.intensity = current_intensity;
+        current_rgbd.depth = current_depth;
+        current_rgbd.initialize();
+        
+        dvo::AffineTransform gt_pose = tum_loader.getPose();
+        dvo::ImagePyramid previous_pyramid(cam_pyramid, previous_intensity, previous_depth);
+        // dvo::ImagePyramidPtr previous_pyramid = camPyr.create(current_intensity, current_depth);
+        // dvo::ImagePyramidPtr 
+        size_t pyramid_level = config_setting["dvo"]["pyramid_level"].as<size_t>();
+        previous_pyramid.build(pyramid_level);
+        
+        dvo::PtSelection point_selecter(previous_pyramid, pt_verifier);
+        Eigen::Isometry3d Tcw = Eigen::Isometry3d::Identity();
+        for (int op_level = pyramid_level-1; op_level >= 0 ; op_level--) {
+            dvo::PtSelection::PtIterator start_pointer, end_pointer;
+            point_selecter.select(op_level, start_pointer, end_pointer);
+
+            dvo::RgbdImage cur_lvl_img = point_selecter.getImagePyramid().level(op_level); //place holder, this is the img2 parameter prepared for solver
+            
+            g2o_solver.solve(start_pointer, end_pointer, cur_lvl_img, Tcw);
+        }
+        // std::cout << "=================================\n";
+        // std::cout << "solver results\n";
+        // std::cout << Tcw.translation() << std::endl;
+        // std::cout << Tcw.rotation() << std::endl;
+        // std::cout << "ground truth\n";
+        // std::cout << gt_pose.translation() << std::endl;
+        // std::cout << gt_pose.rotation() << std::endl;
+        out_file << tum_loader.getTimestamp() << " " << 0.0 << " " << 0.0 << " " << 0.0 << " " << 0.0 << " "
+                 << Tcw.translation()(0) << " " << Tcw.translation()(1) << " " << Tcw.translation()(2) << "\n";
+
+    }
+    out_file.close();
+}
+
 
 int main() {
     char resolved_path[PATH_MAX];
@@ -318,7 +399,8 @@ int main() {
     
     std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
                                                                 : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
-    TUM_loader_test();
+    // TUM_loader_test();
+    solver_test();
     // rgbd_camera_test(image_load_path);
 
     // pt_selection_test(config_setting);
