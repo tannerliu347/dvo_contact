@@ -96,9 +96,13 @@ target_link_libraries( ${PROJECT_NAME}_frontend_solver PUBLIC Eigen3::Eigen
 
 add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_tb.cpp)
 target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES})  
+add_executable( solver_wrapper ${PROJECT_SOURCE_DIR}/src/solver_wrapper.cpp)
+target_link_libraries(solver_wrapper  ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES}
+                                    ${PROJECT_NAME}_TUM_loader ${Yaml_cpp_LIBRARY} )
 #add_executable( solver_test ${PROJECT_SOURCE_DIR}/src/experiments/solver_test.cpp)
 #target_link_libraries( solver_test PUBLIC ${PROJECT_NAME}_frontend_solver ${PROJECT_NAME}_rgbd )    
 
+<<<<<<< HEAD
 #find_package( G2O )
 #include_directories( ${G2O_INCLUDE_DIRS} ) 
 
@@ -110,3 +114,5 @@ target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LI
 
 #add_executable( direct_sparse ${PROJECT_SOURCE_DIR}/src/slambook_utils/direct_sparse.cpp )
 #target_link_libraries( direct_sparse ${OpenCV_LIBS} ${G2O_LIBS} )
+=======
+>>>>>>> solver_wrapper

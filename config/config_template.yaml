@@ -4,3 +4,8 @@
 
 dvo:
   image_load_path: "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/"
+  level_test: 2
+  intensity_threshold: 10.0
+  depth_threshold: 10.0
+  image_width: 640
+  image_height: 480

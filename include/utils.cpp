@@ -2,8 +2,7 @@
 #include <ceres/rotation.h>
 #include <eigen3/Eigen/Core>
 #include "rgbd_image.h"
-#include <ceres/jet.h>
-#include <experimental/filesystem>
+
 // X: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
 template <typename T>
 void Convert7ParameterQuaternionRepresentationIntoMatrix(const T* X, T* XM){
@@ -30,6 +29,7 @@ void Convert7ParameterQuaternionRepresentationIntoMatrix(const T* X, T* XM){
 	XM[13] = T(0);
 	XM[14] = T(0);
 	XM[15] = T(1);
+
 }
 
 template <typename T>
@@ -110,92 +110,4 @@ bool check_pixels_in_img(const Eigen::Matrix<T, 2, Eigen::Dynamic>& pixels_img2,
         }
     }
     return true;
-}
-
-//q_t1, q_t2, q_t21 of the form [qw, qx, qy, qz, tx, ty, tz]
-// calculates the 7 parameter quaternion-translation representation of 
-// the relative transform from {2} to {1} (frame transform from {1} to {2})
-template <typename T>
-void calc_transform_from_quaternion(const T* q_t1, const T* q_t2, T* q_t21, bool verbose=false){
-    double T1_arr[16];
-    double T2_arr[16];
-    Convert7ParameterQuaternionRepresentationIntoMatrix(q_t1, T1_arr);
-    Convert7ParameterQuaternionRepresentationIntoMatrix(q_t2, T2_arr);
-    Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T1 (T1_arr);
-    Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> T2 (T2_arr);
-    //Transform that represents frame 1 in frame 2
-    auto T21 = T2.inverse() * T1;
-    if(verbose){
-        std::cout << "T21: \n";
-        std::cout << T21 << std::endl;
-    }
-    Eigen::Quaterniond q(T21.block<3,3>(0, 0));
-    q_t21[0] = q.w();
-    q_t21[1] = q.x();
-    q_t21[2] = q.y();
-    q_t21[3] = q.z();
-    q_t21[4] = T21(0, 3);
-    q_t21[5] = T21(1, 3);
-    q_t21[6] = T21(2, 3);
-    if(verbose){
-        std::cout << "relative quaternion\n";
-        for(int i = 0; i < 7; i++){
-            std::cout << q_t21[i] << ", ";
-        }
-        std::cout << std::endl; 
-    }
-}
-
-template <typename T>
-void normalize_quaternion(T* q){
-    T normalizer = ceres::sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-    q[0] /= normalizer;
-    q[1] /= normalizer;
-    q[2] /= normalizer;
-    q[3] /= normalizer;
-}
-
-
-// define color space
-const cv::Scalar GREEN(0, 255, 0);
-const cv::Scalar BLUE(255, 0, 0);
-const cv::Scalar RED(0, 0, 255);
-const cv::Scalar YELLOW(0, 255, 255);
-const cv::Scalar MAGENTA(255, 0, 255);
-const cv::Scalar CYAN(255, 255, 0);
-
-using namespace cv;
-using namespace std;
-template<typename T>
-void keypoint_plotter(Mat& img, vector<T>& points,  
-                                char color, 
-                                string name="keypt_plot.png",
-                                bool write_to_file=false,
-                                int radius=5,
-                                int thickness=2
-                                )
-{
-    
-    cv::Scalar plot_color;
-    switch (color)
-    {
-    case 'g': plot_color = GREEN;   break;
-    case 'b': plot_color = BLUE;    break;
-    case 'r': plot_color = RED;     break;
-    case 'c': plot_color = CYAN;    break;
-    case 'y': plot_color = YELLOW;  break;
-    case 'm': plot_color = MAGENTA; break;
-    default:  plot_color = GREEN;   break;
-    }
-    
-    for (int i = 0; i < points.size(); i++) 
-    {
-    cv::circle(img, points[i], radius, plot_color, thickness);
-    }
-    std::string cwd = get_current_dir_name();
-    if(write_to_file){
-        imwrite(cwd+"/runtime_img/"+name, img);
-    }
-    
-    // imwrite(cwd + relative_path, img);
 }
