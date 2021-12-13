@@ -31,7 +31,7 @@ int main (int argc, char* argv[])
 {
     std::string dataset_dir(argv[1]);
     std::string cwd = get_current_dir_name();
-    std::string TUM_dir = cwd;  // place holder, not sure about what associated.txt is 
+    std::string TUM_dir = cwd + '/' + dataset_dir;  // place holder, not sure about what associated.txt is 
     
     dvo::TUMLoader loader(TUM_dir);
     std::cout << "DEBUG loader initialized SUCCESSFUL" << std::endl;
@@ -72,6 +72,8 @@ int main (int argc, char* argv[])
     
     std::cout << "DEBUG all essential parameters build SUCCESSFUL" << std::endl;
 
+    FrontendSolver solver;
+    solver.vis_ = true;
     while (loader.hasNext())
     {
         
@@ -96,7 +98,6 @@ int main (int argc, char* argv[])
         for (size_t op_level = PYRAMID_LEVEL-1; op_level >= 0 ; op_level--)
         {
             dvo::PtSelection::PtIterator start_pointer, end_pointer;
-            point_selecter.select(op_level, start_pointer, end_pointer);
 
             dvo::PointCloud pc;
             Eigen::VectorXd intensity;
@@ -112,14 +113,18 @@ int main (int argc, char* argv[])
                 intensity(idx) = it->i;
                 idx++;
             }
-
-            (point_selecter.getImagePyramid().level(op_level)); //place holder, this is the img2 parameter prepared for solver
+            double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            solver.solve(pc, 
+                         intensity, 
+                         point_selecter.getImagePyramid().level(op_level),
+                         identity); //place holder, this is the img2 parameter prepared for solver
             
             /*
             reserved space for iteratively calling the solver;
             using identity as initial guess for pyramid_level = 2;
             using result from pyramid_level = 2 for 
             */
+            
 
         }
 

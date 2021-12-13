@@ -136,7 +136,7 @@ class PhotometricError_ext {
     const dvo::RgbdImage& img2_; 
     bool vis_;
     bool cur_vis_;
-    bool freq_= 10;
+    int freq_= 10;
 };
 
 double cal_cost_discard_invalid_depth(const Eigen::VectorXd& warped_img2_intensity, const Eigen::VectorXd& img1_intensity){
