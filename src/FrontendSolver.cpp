@@ -101,8 +101,9 @@ class PhotometricError_ext {
                                                                             {std::cout << "Photometric Error initialization finish\n";} 
 
   //transform is a 7 parameter representation of transformation (quaternion, translation) T [7]
-  bool operator()(const double* quat_trans, double* residual) const {
+  bool operator()(const double* const quat, const double* const trans, double* residual) const {
     int N = pc1_.cols(); //number of selected points
+    double quat_trans[7] = {quat[0], quat[1], quat[2], quat[3], trans[0], trans[1], trans[2]};
     double transform[16];
     //transform quaternion-trans parametrization to matrix 
     Convert7ParameterQuaternionRepresentationIntoMatrix(quat_trans, transform);
@@ -162,19 +163,21 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
         std::cout <<transform[i] << " ";
     }
     std::cout << std::endl;
-    
+    double quat[4] = {transform[0], transform[1], transform[2], transform[3]};
+    double trans[3] = {transform[4], transform[5], transform[6]};
 
     problem.AddResidualBlock (
-        new ceres::NumericDiffCostFunction<PhotometricError_ext, ceres::CENTRAL, 1, 7>(
+        new ceres::NumericDiffCostFunction<PhotometricError_ext, ceres::CENTRAL, 1, 4, 3>(
             new PhotometricError_ext ( pc1, img1_intensity, img2)
         ),
         nullptr,
-        transform
+        quat,
+        trans
     );
 
     //Add quaternion constraint
-    //ceres::QuaternionParameterization*  quaternion_param = new ceres::QuaternionParameterization;
-    //problem.SetParameterization(transform, quaternion_param);
+    ceres::QuaternionParameterization*  quaternion_param = new ceres::QuaternionParameterization;
+    problem.SetParameterization(quat, quaternion_param);
 
     // configure solver
     ceres::Solver::Options options;    
@@ -190,8 +193,10 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
 
     // solver output
     cout<<summary.FullReport() <<endl;
-    cout<<"estimated transform";
-    for ( auto t:transform ) cout<< t <<" ";
+    cout<<"estimated transform quat:\n";
+    for ( auto t:quat ) cout<< t <<" ";
+    cout<<"\nestimated transform trans:\n";
+    for ( auto t:trans ) cout<< t <<" ";
     cout<<endl; 
 }
 
