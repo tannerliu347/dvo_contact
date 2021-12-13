@@ -1,6 +1,6 @@
 #include "interpolation.h"
 #include "rgbd_image.h"
-
+#include "utils.hpp"
 
 namespace dvo {
 
@@ -382,7 +382,7 @@ void RgbdImage::warpIntensity(const AffineTransform& transformation, const Point
 }
 
 Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation, const PointCloud& reference_pointcloud, 
-                              const Intrinsic& intrinsics)const{
+                              const Intrinsic& intrinsics, bool vis, string file_name)const{
     
     // the following line is comment out because AffineTransform is already define as 3 floats 
     // Eigen::Affine3f new_transformation = transformation.cast<float>();
@@ -393,6 +393,9 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
     int N = reference_pointcloud.cols();
     PointCloud transformed_pointcloud = transformation * reference_pointcloud;
     Eigen::VectorXf warped_intensities(N);
+    std::vector<cv::Point2i> img2_pts_valid;
+    std::vector<cv::Point2i> img2_pts_invalid_depth;
+
     for(size_t idx = 0; idx < N; idx++) {
         const Eigen::Vector4f& p3d = transformed_pointcloud.col(idx);
         if(!std::isfinite(p3d(2))) {
@@ -403,12 +406,27 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
 
         float x_projected = static_cast<float>(p3d(0) * intrinsics.fx() / p3d(2) + ox);
         float y_projected = static_cast<float>(p3d(1) * intrinsics.fy() / p3d(2) + oy);
+
+        cv::Point2i pt (x_projected, y_projected);
+
+
         if(inImage(x_projected, y_projected)) {
             float z = (float) p3d(2);
             warped_intensities(idx) = Interpolation::bilinearWithDepth(this->intensity, this->depth, x_projected, y_projected, z);
+            if(warped_intensities(idx) + 1.0f < 1e-5){
+                img2_pts_invalid_depth.push_back(pt);
+            } else {
+                img2_pts_valid.push_back(pt);
+            }
         } else {
             warped_intensities(idx) = -1.0f;
             outliers++;
+        }
+        if(vis){
+            cv::Mat img; 
+            cv::cvtColor((this->intensity).clone(), img, CV_GRAY2RGB);
+            keypoint_plotter(img, img2_pts_valid, 'b', file_name, false, 5, 2); 
+            keypoint_plotter(img, img2_pts_invalid_depth, 'r', file_name, true, 5, 2); 
         }
     }
     std::cout << "total input points to warp: " << N << std::endl;
@@ -505,4 +523,4 @@ void RgbdImage::warpIntensityForward(const AffineTransform& transformation, cons
 }
 // ----------------------------- RgbdImage ----------------------------------------
 
-} //namespace dvo
+} //namespace dvo   

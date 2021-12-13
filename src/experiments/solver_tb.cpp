@@ -35,15 +35,6 @@ using namespace std;
 const int MAX_FEATURES = 500; // for orb_features 
 const float GOOD_MATCH_PERCENT = 0.15f;
 
-
-// define color space
-const cv::Scalar GREEN(0, 255, 0);
-const cv::Scalar BLUE(255, 0, 0);
-const cv::Scalar RED(0, 0, 255);
-const cv::Scalar YELLOW(0, 255, 255);
-const cv::Scalar MAGENTA(255, 0, 255);
-const cv::Scalar CYAN(255, 255, 0);
-
 // define scaling factor
 const float DEPTH_SCALE = 1.f / 5000;
 
@@ -60,12 +51,6 @@ void read_intensity(const char* filename, Mat& canvas);
 void read_depth(const char* filename, Mat& canvas);
 
 void keep_points(float discard_precent, size_t width, size_t height, const vector<KeyPoint>& in_kps, vector<Point2i>& out_kps) ;
-
-template<typename T>
-void keypoint_plotter(Mat& img, vector<T>& points,  
-                                char color = 'g', 
-                                int radius = 5,
-                                int thickness = 2);
 
 void feature_point_to_point_cloud (const std::vector<cv::Point2i>& kept_pts,
                                         const dvo::PointCloud& img_pc,
@@ -264,6 +249,15 @@ int main()
     // std::cout << "height: " << img2.height << std::endl;
     //solver.solve(kept_pts_pc, img1_kp_intensity, img2);
 
+    // for plotting verifications
+    
+    Mat im_display = img1_cvmat;
+    
+    std::vector<cv::Point2i> kps_vec;
+    for (int i = 0; i < kps.size(); i++) 
+    {
+        kps_vec.push_back(kps[i].pt);
+    }
 
     //relative quat 0.999877, 0.00273213, -0.0143958, -0.00556205, 0.00192522, 0.119313, -0.0928132
     double q_t1[7] = {-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327};
@@ -274,7 +268,8 @@ int main()
     double q_test[7] = {1.0, 0.0, 0.0, 0.0, 0.00192522, 0.119313, -0.0928132};
     double q_test2[7] = {0.999877, 0.0028, -0.015, -0.00556205, 0.0018, 0.13, -0.11};
     double q_test_nasty[7] = {0.999877, 0.0028, -0.015, -0.00556205, 0.0018, 0.13, -0.11};
-    solver.solve(non_zero_pc, non_zero_intensity, img2, q_21);
+    solver.vis_ = true;
+    solver.solve(non_zero_pc, non_zero_intensity, img2, q_test);
     
     /*
     Cost:
@@ -283,16 +278,6 @@ Final                            2.933711e+05
 Change                           8.301341e+05
     */
 
-    // for plotting verifications
-    /*
-    Mat im_display = img1_cvmat;
-    
-    std::vector<cv::Point2i> kps_vec;
-    for (int i = 0; i < kps.size(); i++) 
-    {
-        kps_vec.push_back(kps[i].pt);
-    }
-
     std::cout << "DEBUG num of kps_vec " << kps_vec.size() << std::endl;
 
     keypoint_plotter(im_display, kps_vec, 'b');
@@ -300,11 +285,9 @@ Change                           8.301341e+05
     
     imwrite(cwd+"/../src/experiments/features.png", im_display);
     std::cout << "Write image completed" <<std::endl;
-    */
+    
     return 0;
 }
-
-
 
 void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1) 
 {
@@ -321,7 +304,6 @@ void read_image(const char* filename, Mat& canvas)
     canvas = cv::imread(image_path, IMREAD_COLOR);
     return ;
 }
-
 
 void read_intensity(const char* filename, Mat& canvas) 
 {
@@ -372,38 +354,6 @@ void keep_points(float discard_precent, size_t width, size_t height, const vecto
     //cout<<"DEBUG dummy counter " << dummy_counter <<endl;
     return  ;
 }
-
-
-template<typename T>
-void keypoint_plotter(Mat& img, vector<T>& points,  
-                                char color, 
-                                int radius,
-                                int thickness
-                                )
-{
-    
-    cv::Scalar plot_color;
-    switch (color)
-    {
-    case 'g': plot_color = GREEN;   break;
-    case 'b': plot_color = BLUE;    break;
-    case 'r': plot_color = RED;     break;
-    case 'c': plot_color = CYAN;    break;
-    case 'y': plot_color = YELLOW;  break;
-    case 'm': plot_color = MAGENTA; break;
-    default:  plot_color = GREEN;   break;
-    }
-    
-    string cwd = get_current_dir_name();
-    
-    for (int i = 0; i < points.size(); i++) 
-    {
-    cv::circle(img, points[i], radius, plot_color, thickness);
-    }
-    
-    // imwrite(cwd + relative_path, img);
-}
-
 
 void feature_point_to_point_cloud (const std::vector<cv::Point2i>& kept_pts,
                                         const dvo::PointCloud& img_pc,

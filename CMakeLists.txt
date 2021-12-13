@@ -71,7 +71,7 @@ add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/intrinsic.cpp
                                         ${PROJECT_SOURCE_DIR}/src/interpolation.cpp
                                         ${PROJECT_SOURCE_DIR}/src/point_selection.cpp)
-target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS} Eigen3::Eigen )
 
 add_library(${PROJECT_NAME}_TUM_loader SHARED ${PROJECT_SOURCE_DIR}/src/experiments/TUM_loader.cpp)
 target_link_libraries(${PROJECT_NAME}_TUM_loader PUBLIC ${PROJECT_NAME}_rgbd

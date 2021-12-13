@@ -3,7 +3,7 @@
 #include <eigen3/Eigen/Core>
 #include "rgbd_image.h"
 #include <ceres/jet.h>
-
+#include <experimental/filesystem>
 // X: 7 parameters of  [qw, qx, qy, qz, tx, ty, tz]
 template <typename T>
 void Convert7ParameterQuaternionRepresentationIntoMatrix(const T* X, T* XM){
@@ -153,4 +153,49 @@ void normalize_quaternion(const T* q){
     q[1] /= normalizer;
     q[2] /= normalizer;
     q[3] /= normalizer;
+}
+
+
+// define color space
+const cv::Scalar GREEN(0, 255, 0);
+const cv::Scalar BLUE(255, 0, 0);
+const cv::Scalar RED(0, 0, 255);
+const cv::Scalar YELLOW(0, 255, 255);
+const cv::Scalar MAGENTA(255, 0, 255);
+const cv::Scalar CYAN(255, 255, 0);
+
+using namespace cv;
+using namespace std;
+template<typename T>
+void keypoint_plotter(Mat& img, vector<T>& points,  
+                                char color, 
+                                string name="keypt_plot.png",
+                                bool write_to_file=false,
+                                int radius=5,
+                                int thickness=2
+                                )
+{
+    
+    cv::Scalar plot_color;
+    switch (color)
+    {
+    case 'g': plot_color = GREEN;   break;
+    case 'b': plot_color = BLUE;    break;
+    case 'r': plot_color = RED;     break;
+    case 'c': plot_color = CYAN;    break;
+    case 'y': plot_color = YELLOW;  break;
+    case 'm': plot_color = MAGENTA; break;
+    default:  plot_color = GREEN;   break;
+    }
+    
+    for (int i = 0; i < points.size(); i++) 
+    {
+    cv::circle(img, points[i], radius, plot_color, thickness);
+    }
+    std::string cwd = get_current_dir_name();
+    if(write_to_file){
+        imwrite(cwd+"/runtime_img/"+name, img);
+    }
+    
+    // imwrite(cwd + relative_path, img);
 }
