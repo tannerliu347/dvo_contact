@@ -33,15 +33,10 @@ int main (int argc, char* argv[])
 {
     std::string dataset_dir(argv[1]);
     std::string cwd = get_current_dir_name();
-<<<<<<< HEAD
-    std::string TUM_dir = cwd + '/' + dataset_dir;  // place holder, not sure about what associated.txt is 
-    
-=======
     std::string TUM_dir = cwd + '/' + dataset_dir;  
 
     std::cout << "DEBUG current dataset directory = " << cwd+dataset_dir << std::endl;
 
->>>>>>> solver_wrapper
     dvo::TUMLoader loader(TUM_dir);
     std::cout << "DEBUG loader initialized SUCCESSFUL" << std::endl;
 
@@ -90,13 +85,10 @@ int main (int argc, char* argv[])
     pt_verifier.depth_threshold = config_setting["dvo"]["depth_threshold"].as<float>();
     
     std::cout << "DEBUG all essential parameters build SUCCESSFUL" << std::endl;
-<<<<<<< HEAD
 
     FrontendSolver solver;
     solver.vis_ = true;
-=======
     int temp_counter = 0;
->>>>>>> solver_wrapper
     while (loader.hasNext())
     {
         
@@ -158,17 +150,12 @@ int main (int argc, char* argv[])
             /*
             reserved space for iteratively calling the solver;
             using identity as initial guess for pyramid_level = 2;
-<<<<<<< HEAD
             using result from pyramid_level = 2 for 
             */
             
-=======
-            using result from pyramid_level = 2 for pyramid_level = 1;
-            using result from pyramid_level = 1 for original image i. e. pyramid_level = 0;
->>>>>>> solver_wrapper
 
-            input parameters pc, intensity, img2 = (point_selecter.getImagePyramid().level(op_level));
-            */
+            // input parameters pc, intensity, img2 = (point_selecter.getImagePyramid().level(op_level));
+            
         
             temp_counter++;
         }
