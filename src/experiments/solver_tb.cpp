@@ -18,6 +18,8 @@
 #include "FrontendSolver.h"
 #include "utils.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 // new data
 // img1.png == 1341841281.790551.png, img2.png == 1341841282.730734.png
 // 
@@ -69,7 +71,7 @@ void feature_point_to_intensity (const std::vector<cv::Point2i>& kept_pts,
                                     Eigen::VectorXd& intensity) ;
 
 
-int main()
+int main(int argc, char* argv[])
 {
     
     //compute ground truth transform  [qw, qx, qy, qz, tx, ty, tz]
@@ -78,19 +80,60 @@ int main()
 
     // img2.png 1341839847.2712 // tx = -2.3366 ty = -2.1170 tz = 1.9314   
                                 // qx = 0.9437 qy = 0.0751 qz = 0.0092 qw = -0.3221
-    
+    string config_file = "../src/experiments/config.yaml";
+    if(argc > 1){
+        config_file = argv[1];
+    } else{
+        std::cout << "using default config.yaml\n";
+    }
     string cwd = get_current_dir_name();
     cout << "cwd = " << cwd <<endl;
+    YAML::Node config = YAML::LoadFile(config_file);
+    // camera intrinsics 
+    float fx = config["fx"].as<float>();
+    float fy = config["fy"].as<float>();
+    float ox = config["ox"].as<float>();
+    float oy = config["oy"].as<float>();
+
     
+    vector<double> q_t1_d = config["q_t1"].as<vector<double>>();
+    vector<double> q_t2_d = config["q_t2"].as<vector<double>>();
+    double q_t1[7]; 
+    double q_t2[7];
+    for(int i = 0; i < 7; i++){
+        q_t1[i] = q_t1_d[i];
+        //std::cout << q_t1[i] << " ";
+        
+    }
+    for(int i = 0; i < 7; i++){
+        q_t2[i] = q_t2_d[i];
+        //std::cout << q_t2[i] << " ";
+    }
+    
+    std::cout << "fx " << fx << endl;
+    //double q_t1[7] = {-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327};
+    //double q_t2[7] = {-0.3221, 0.9437, 0.0751, 0.0092, -2.3366, -2.1170, 1.9314};
+    
+    Eigen::Matrix3f intrinsic_mat;
+    intrinsic_mat << 
+                    fx, 0.f, ox, 
+                    0.f, fy, oy, 
+                    0.f, 0.f, 1.f;
+
     // read rgb image
     Mat img1_cvmat, img2_cvmat;
-    read_image("img1.png", img1_cvmat);
-    read_image("img2.png", img2_cvmat);
+    std::string img1_str = config["img1"].as<string>();
+    const char * img1_c = img1_str.c_str();
+    std::string img2_str = config["img2"].as<string>();
+    const char * img2_c = img2_str.c_str();
+
+    read_image(img1_c, img1_cvmat);
+    read_image(img2_c, img2_cvmat);
 
     //read intensity image
     Mat img1_intensity_discard, img2_intensity_discard;
-    read_intensity("img1.png", img1_intensity_discard);
-    read_intensity("img2.png", img2_intensity_discard);
+    read_intensity(img1_c, img1_intensity_discard);
+    read_intensity(img2_c, img2_intensity_discard);
 
     cv::Mat img1_intensity, img2_intensity;
     img1_intensity_discard.convertTo(img1_intensity, CV_32FC1);
@@ -103,9 +146,12 @@ int main()
     Mat img1_depth_unscale, img2_depth_unscale;
     // read_depth("img1_depth.png", img1_depth_prescale);
     // read_depth("img2_depth.png", img2_depth_prescale);
-
-    read_depth("img1_depth.png", img1_depth_unscale);
-    read_depth("img2_depth.png", img2_depth_unscale);
+    std::string img1_depth_str = config["img1_depth"].as<string>();
+    const char * img1_depth_c = img1_depth_str.c_str();
+    std::string img2_depth_str = config["img2_depth"].as<string>();
+    const char * img2_depth_c = img2_depth_str.c_str();
+    read_depth(img1_depth_c, img1_depth_unscale);
+    read_depth(img2_depth_c, img2_depth_unscale);
 
     // scale the depth
     // cv::Mat img1_depth(cam_width, cam_height, CV_64F), img2_depth(cam_width, cam_height, CV_64F);
@@ -115,7 +161,6 @@ int main()
     cv::Mat img2_depth; // = img2_depth_unscale * DEPTH_SCALE;
     img1_depth_unscale.convertTo(img1_depth, CV_32FC1);
     img2_depth_unscale.convertTo(img2_depth, CV_32FC1);
-
     std::cout << "DEBUG another inspection for depth, before scaling " << img1_depth.at<float>(200, 300) << std::endl;
     img1_depth = img1_depth * DEPTH_SCALE;
     img2_depth = img2_depth * DEPTH_SCALE;
@@ -128,19 +173,6 @@ int main()
         return -1;
     }
 
-    // camera intrinsics 
-    float fx = 535.4;
-    float fy = 539.2;
-    float ox = 320.1;
-    float oy = 247.6;
-
-
-    Eigen::Matrix3f intrinsic_mat;
-    intrinsic_mat << 
-                    fx, 0.f, ox, 
-                    0.f, fy, oy, 
-                    0.f, 0.f, 1.f;
-    
     dvo::Intrinsic cam_intrinsic(intrinsic_mat);
     // cam_intrinsic =  dvo::Intrinsic::Intrinsic(intrinsic_mat);
     
@@ -159,17 +191,14 @@ int main()
     // cv::imwrite(cwd+"/../src/experiments/norm_depth.png", img1.depth);
 
     
-    double min, max;
-    cv::minMaxIdx(img1.depth, &min, &max);
-    cv::Mat adjMap;
-    cv::convertScaleAbs(img1.depth, adjMap, 255/max);
+    //double min, max;
+    //cv::minMaxIdx(img1.depth, &min, &max);
+    //cv::Mat adjMap;
+    //cv::convertScaleAbs(img1.depth, adjMap, 255/max);
     // DEBUG
-    std::cout << "DEBUG min, max of depth " << min << " " << max << std::endl;
-    cv::imwrite(cwd+"/../src/experiments/norm_depth.png", adjMap);
+    //std::cout << "DEBUG min, max of depth " << min << " " << max << std::endl;
+    //cv::imwrite(cwd+"/../src/experiments/norm_depth.png", adjMap);
     
-
-
-
     std::cout << "DEBUG try inspect depth " << img1.depth.at<double>(300, 200)<< std::endl;
     // std::cout << "DEBUG inspect intensity " << img1_intensity.at<float>(200, 200) << std::endl;
 
@@ -205,7 +234,7 @@ int main()
     vector<Point2i> kept_kps;
     // discard all surrounding key points
     // keep_points() first argument is a hyper parameter between 0-0.5
-    keep_points(0.3, cam_width, cam_height, kps, kept_kps);
+    keep_points(config["keep_pt_ratio"].as<float>(), cam_width, cam_height, kps, kept_kps);
 
     int kept_kps_size = kept_kps.size();
     dvo::PointCloud kept_pts_pc(4, kept_kps_size);
@@ -268,18 +297,22 @@ int main()
 
 
     // for plotting verifications
-    
-    Mat im_display = img1_cvmat;
-    
+
     std::vector<cv::Point2i> kps_vec;
     for (int i = 0; i < kps.size(); i++) 
     {
         kps_vec.push_back(kps[i].pt);
     }
-
+    
+    Mat im_d = img1_intensity;
+    cv::Mat im_display; 
+    cv::cvtColor(im_d, im_display, CV_GRAY2RGB);
+    keypoint_plotter(im_display, kps_vec, 'y');
+    keypoint_plotter(im_display, non_zero_kps, 'b');
+    
+    imwrite(cwd+"/../runtime_img/features.png", im_display);
+    std::cout << "Write image completed" <<std::endl;
     //relative quat 0.999877, 0.00273213, -0.0143958, -0.00556205, 0.00192522, 0.119313, -0.0928132
-    double q_t1[7] = {-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327};
-    double q_t2[7] = {-0.3221, 0.9437, 0.0751, 0.0092, -2.3366, -2.1170, 1.9314};
     double q_21[7] = {};
     calc_transform_from_quaternion(q_t1, q_t2, q_21, true);
     double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.00001, 0.0, 0.0};
@@ -288,7 +321,15 @@ int main()
     double q_test_nasty[7] = {0.999877, 0.0028, -0.015, -0.00556205, 0.0018, 0.13, -0.11};
     FrontendSolver solver;
     solver.vis_ = true;
-    solver.solve(non_zero_pc, non_zero_intensity, img2, q_test);
+    string init = config["init"].as<string>();
+    if(init == "identity"){
+        solver.solve(non_zero_pc, non_zero_intensity, img2, identity);
+    } else if(init == "gt"){
+        solver.solve(non_zero_pc, non_zero_intensity, img2, q_21);
+    } else{
+        solver.solve(non_zero_pc, non_zero_intensity, img2, q_test);
+    }
+    
     
     /*
     Cost:
@@ -299,11 +340,7 @@ Change                           8.301341e+05
 
     std::cout << "DEBUG num of kps_vec " << kps_vec.size() << std::endl;
 
-    keypoint_plotter(im_display, kps_vec, 'b');
-    keypoint_plotter(im_display, kept_kps, 'g');
-    
-    imwrite(cwd+"/../src/experiments/features.png", im_display);
-    std::cout << "Write image completed" <<std::endl;
+
     
     return 0;
 }

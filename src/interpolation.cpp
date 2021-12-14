@@ -45,7 +45,7 @@ float Interpolation::bilinearWithDepth(const cv::Mat& intensity, const cv::Mat& 
     } else {
         //val = Invalid;
         val = -1.0f;
-        std::cout << "invalid depth after warping!\n";
+        //std::cout << "invalid depth after warping!\n";
         //std::cout << depth.at<float>(y0, x0)<<std::endl;
         //std::cout << depth.at<float>(y0, x0) - z_eps <<std::endl;
     }

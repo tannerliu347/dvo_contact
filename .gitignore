@@ -8,4 +8,4 @@ pangolin
 Pangolin
 g2o/*
 runtime_img/*
-*.png
+#*.png

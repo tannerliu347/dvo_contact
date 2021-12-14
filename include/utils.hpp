@@ -194,7 +194,7 @@ void keypoint_plotter(Mat& img, vector<T>& points,
     }
     std::string cwd = get_current_dir_name();
     if(write_to_file){
-        imwrite(cwd+"/runtime_img/"+name, img);
+        imwrite(cwd+"/../runtime_img/"+name, img);
     }
     
     // imwrite(cwd + relative_path, img);

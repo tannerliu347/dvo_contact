@@ -95,7 +95,7 @@ target_link_libraries( ${PROJECT_NAME}_frontend_solver PUBLIC Eigen3::Eigen
 #                                        /usr/local/lib/libpango_windowing.so)
 
 add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_tb.cpp)
-target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES})  
+target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES} ${Yaml_cpp_LIBRARY})  
 add_executable( solver_wrapper ${PROJECT_SOURCE_DIR}/src/solver_wrapper.cpp)
 target_link_libraries(solver_wrapper  ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES}
                                     ${PROJECT_NAME}_TUM_loader ${Yaml_cpp_LIBRARY} )
