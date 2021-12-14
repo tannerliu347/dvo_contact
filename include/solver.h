@@ -140,6 +140,7 @@ public:
         optimizer.initializeOptimization();
         optimizer.optimize(30);
         Tcw = pose->estimate();
+        // std::cout << "solved\n";
         return true;
     }
 

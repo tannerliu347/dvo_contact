@@ -3,4 +3,10 @@
 # Our program will read the contents from that file instead of this one
 
 dvo:
-  image_load_path: "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/"
+  image_load_path: "/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/"
+  pyramid_level: 5
+  intensity_threshold: 0.0
+  depth_threshold: 0.0
+  image_width: 640
+  image_height: 480
+  associated_trajectory_path: "/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/associated.txt"

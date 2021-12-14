@@ -13,6 +13,7 @@
 #include <pangolin/scene/scenehandler.h>
 #include <iostream>
 #include <algorithm>
+#include <iomanip>
 
 void TUM_loader_test() {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
@@ -316,7 +317,7 @@ void pt_selection_test(YAML::Node config_setting) {
 
 void solver_test() {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
-    tum_loader.teleportToFrame(780);
+    // tum_loader.teleportToFrame();
     // save to trajectory
     std::ofstream out_file("/home/tannerliu/dvo_contact/trajectory.txt");
 
@@ -351,19 +352,26 @@ void solver_test() {
     pt_verifier.intensity_threshold = config_setting["dvo"]["intensity_threshold"].as<float>();
     pt_verifier.depth_threshold = config_setting["dvo"]["depth_threshold"].as<float>();
 
+    int i = 0;
+
+    dvo::AffineTransform gt = tum_loader.getPose();
+    Eigen::Isometry3d gt_start_pose;
+    gt_start_pose.translation() = gt.translation().cast<double>();
+    gt_start_pose.linear() = gt.rotation().cast<double>();
+
     while (tum_loader.hasNext())
     {
-        tum_loader.step();
+        if (!tum_loader.step() || !tum_loader.hasNext())
+            break;
         current_img = tum_loader.getImgs();
         current_intensity = current_img[0];
         current_depth = current_img[1];
 
-        dvo::RgbdImage current_rgbd(camera);
-        current_rgbd.intensity = current_intensity;
-        current_rgbd.depth = current_depth;
-        current_rgbd.initialize();
+        // dvo::RgbdImage current_rgbd(camera);
+        // current_rgbd.intensity = current_intensity;
+        // current_rgbd.depth = current_depth;
+        // current_rgbd.initialize();
         
-        dvo::AffineTransform gt_pose = tum_loader.getPose();
         dvo::ImagePyramid previous_pyramid(cam_pyramid, previous_intensity, previous_depth);
         // dvo::ImagePyramidPtr previous_pyramid = camPyr.create(current_intensity, current_depth);
         // dvo::ImagePyramidPtr 
@@ -387,8 +395,14 @@ void solver_test() {
         // std::cout << "ground truth\n";
         // std::cout << gt_pose.translation() << std::endl;
         // std::cout << gt_pose.rotation() << std::endl;
-        out_file << tum_loader.getTimestamp() << " " << 0.0 << " " << 0.0 << " " << 0.0 << " " << 0.0 << " "
-                 << Tcw.translation()(0) << " " << Tcw.translation()(1) << " " << Tcw.translation()(2) << "\n";
+        gt_start_pose = gt_start_pose * Tcw;
+        out_file << std::fixed << std::setprecision(8) << tum_loader.getTimestamp();
+        out_file << " " << gt_start_pose.translation()(0) << " " << gt_start_pose.translation()(1) 
+                 << " " << gt_start_pose.translation()(2) << " " << 0.0 << " " << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
+
+        previous_intensity = current_intensity;
+        previous_depth = current_depth;
+        std::cout << i++ << std::endl;
 
     }
     out_file.close();
@@ -403,8 +417,8 @@ int main() {
     
     std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
                                                                 : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
-    TUM_loader_test();
-    // solver_test();
+    // TUM_loader_test();
+    solver_test();
     // rgbd_camera_test(image_load_path);
 
     // pt_selection_test(config_setting);

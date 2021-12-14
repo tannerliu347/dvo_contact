@@ -63,7 +63,7 @@ class RgbdCamera {
 public:
     RgbdCamera(size_t width, size_t height, const dvo::Intrinsic& intrinsics);
     ~RgbdCamera() {
-        std::cout << "Destruct Rgbd Camera Object" << std::endl;
+        // std::cout << "Destruct Rgbd Camera Object" << std::endl;
     }
 
     size_t width() const;
