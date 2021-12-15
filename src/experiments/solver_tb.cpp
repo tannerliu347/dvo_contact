@@ -315,9 +315,15 @@ int main(int argc, char* argv[])
     //relative quat 0.999877, 0.00273213, -0.0143958, -0.00556205, 0.00192522, 0.119313, -0.0928132
     double q_21[7] = {};
     calc_transform_from_quaternion(q_t1, q_t2, q_21, true);
-    double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.00001, 0.0, 0.0};
-    double q_test[7] = {1.0, 0.0, 0.0, 0.0, 0.00192522, 0.119313, -0.0928132};
+    double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<double> q_test_v = config["q_test"].as<vector<double>>();
+    double q_test[7]; 
+    for(int i = 0; i < 7; i++){
+        q_test[i] = q_test_v[i];
+        //std::cout << q_t2[i] << " ";
+    }
     double q_test2[7] = {0.999877, 0.0028, -0.015, -0.00556205, 0.0018, 0.13, -0.11};
+    double q_trans[7] = {0.999877, 0.00273213, -0.0143958, -0.00556205, 0.003, 0.119313, -0.0928132};
     double q_test_nasty[7] = {0.999877, 0.0028, -0.015, -0.00556205, 0.0018, 0.13, -0.11};
     FrontendSolver solver;
     solver.vis_ = true;
