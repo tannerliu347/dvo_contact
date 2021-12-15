@@ -85,6 +85,9 @@ int main (int argc, char* argv[])
     pt_verifier.depth_threshold = config_setting["dvo"]["depth_threshold"].as<float>();
     
     std::cout << "DEBUG all essential parameters build SUCCESSFUL" << std::endl;
+
+    FrontendSolver solver;
+    solver.vis_ = true;
     int temp_counter = 0;
     while (loader.hasNext())
     {
@@ -122,7 +125,6 @@ int main (int argc, char* argv[])
         for (int op_level = PYRAMID_LEVEL-1; op_level >= 0 ; op_level--)
         {
             dvo::PtSelection::PtIterator start_pointer, end_pointer;
-            point_selecter.select(op_level, start_pointer, end_pointer);
 
             int sp_size = end_pointer-start_pointer;
             dvo::PointCloud pc(4, sp_size);
@@ -139,17 +141,21 @@ int main (int argc, char* argv[])
                 intensity(idx) = it->i;
                 idx++;
             }
-
-            (point_selecter.getImagePyramid().level(op_level)); //place holder, this is the img2 parameter prepared for solver
+            double identity[7] = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            solver.solve(pc, 
+                         intensity, 
+                         point_selecter.getImagePyramid().level(op_level),
+                         identity); //place holder, this is the img2 parameter prepared for solver
             
             /*
             reserved space for iteratively calling the solver;
             using identity as initial guess for pyramid_level = 2;
-            using result from pyramid_level = 2 for pyramid_level = 1;
-            using result from pyramid_level = 1 for original image i. e. pyramid_level = 0;
-
-            input parameters pc, intensity, img2 = (point_selecter.getImagePyramid().level(op_level));
+            using result from pyramid_level = 2 for 
             */
+            
+
+            // input parameters pc, intensity, img2 = (point_selecter.getImagePyramid().level(op_level));
+            
         
             temp_counter++;
         }

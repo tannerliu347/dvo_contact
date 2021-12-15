@@ -8,6 +8,7 @@
 #include <vector>
 #include "utils.hpp"
 #include <math.h>
+#include <string>
 using namespace std;
 
 /*
@@ -90,18 +91,21 @@ class PhotometricError {
 
 
 //using purely external modified warp_intensity function
+int counter_ = 0;
 class PhotometricError_ext {
 
  public:
   //
   //pc_1: point cloud of selected feature points, eigen matrix of (4 x n) each column: [x, y, z, 1]
-  PhotometricError_ext(const dvo::PointCloud& pc1, const Eigen::VectorXd& img1_intensity, const dvo::RgbdImage& img2) : pc1_ (pc1), 
+  PhotometricError_ext(const dvo::PointCloud& pc1, const Eigen::VectorXd& img1_intensity, const dvo::RgbdImage& img2, bool vis) : pc1_ (pc1), 
                                                                            img1_intensity_ (img1_intensity),
-                                                                           img2_(img2)
+                                                                           img2_(img2),
+                                                                           vis_(vis)
                                                                             {std::cout << "Photometric Error initialization finish\n";} 
 
   //transform is a 7 parameter representation of transformation (quaternion, translation) T [7]
   bool operator()(const double* const quat, const double* const trans, double* residual) const {
+    counter_ ++;
     int N = pc1_.cols(); //number of selected points
     double quat_trans[7] = {quat[0], quat[1], quat[2], quat[3], trans[0], trans[1], trans[2]};
     double transform[16];
@@ -112,15 +116,17 @@ class PhotometricError_ext {
     
     // std::cout << "After quaternion conversion\n";
     Eigen::Map<const Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> extrinsics (transform);
-    Eigen::VectorXd warped_intensity_in_img2 = img2_.warpIntensity2(extrinsics.cast<float>(), pc1_, img2_.camera().intrinsics());
+    bool cur_vis = (counter_ % freq_ == 0) && vis_;
+    string filename = std::to_string(counter_) + ".png";
+    Eigen::VectorXd warped_intensity_in_img2 = img2_.warpIntensity2(extrinsics.cast<float>(), pc1_, img2_.camera().intrinsics(), cur_vis, filename);
     //std::cout << "DEBUG warped intensity" << intensity_in_img2;
     //std::cout << "DEBUG img1_intensity_" <<img1_intensity_;
     auto intensity_diff = warped_intensity_in_img2 - img1_intensity_;
 
-    //residual[0] = intensity_diff.norm();
-    residual[0] = cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_);
+    residual[0] = intensity_diff.norm();
+    //residual[0] = cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_);
     std::cout << "Residual  " << residual[0] << std::endl;  
-    std::cout << "Residual (discard invalid depth) " << cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_) << std::endl; 
+    cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_); 
     return true;
   }
 
@@ -128,6 +134,9 @@ class PhotometricError_ext {
     const dvo::PointCloud& pc1_;
     const Eigen::VectorXd& img1_intensity_;
     const dvo::RgbdImage& img2_; 
+    bool vis_;
+    bool cur_vis_;
+    int freq_= 10;
 };
 
 double cal_cost_discard_invalid_depth(const Eigen::VectorXd& warped_img2_intensity, const Eigen::VectorXd& img1_intensity){
@@ -147,6 +156,7 @@ double cal_cost_discard_invalid_depth(const Eigen::VectorXd& warped_img2_intensi
     }
     std::cout << "intensity RMSE: " << std::sqrt(cost_squared/(N-num_invalid)) <<std::endl;
     std::cout << "intensity mean err: " << l1_cost/(N-num_invalid) <<std::endl;
+    std::cout << "Residual (discard invalid depth) " << std::sqrt(cost_squared) <<std::endl;
     return std::sqrt(cost_squared);
 }
 
@@ -168,7 +178,7 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
 
     problem.AddResidualBlock (
         new ceres::NumericDiffCostFunction<PhotometricError_ext, ceres::CENTRAL, 1, 4, 3>(
-            new PhotometricError_ext ( pc1, img1_intensity, img2)
+            new PhotometricError_ext ( pc1, img1_intensity, img2, vis_)
         ),
         nullptr,
         quat,
@@ -194,7 +204,7 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
     // solver output
     cout<<summary.FullReport() <<endl;
     cout<<"estimated transform quat:\n";
-    for ( auto t:quat ) cout<< t <<" ";
+    for ( auto t:quat ) cout << t <<" ";
     cout<<"\nestimated transform trans:\n";
     for ( auto t:trans ) cout<< t <<" ";
     cout<<endl; 

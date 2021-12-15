@@ -1,0 +1,14 @@
+---
+ fx: 535.4
+ fy: 539.2
+ ox: 320.1
+ oy: 247.6
+ q_t1: [-0.3235, 0.9424, 0.0850, -0.0028, -2.3142, -2.2665, 1.9327]
+ q_t2: [-0.3221, 0.9437, 0.0751, 0.0092, -2.3366, -2.1170, 1.9314]
+ img1: "img1_old.png"
+ img2: "img2_old.png"
+ img1_depth: "img1_depth_old.png"
+ img2_depth: "img2_depth_old.png"
+ keep_pt_ratio: 0.3
+ init: "test"
+

@@ -4,6 +4,8 @@
 
 #include <memory>
 #include <eigen3/Eigen/Geometry>
+#include <string>
+using namespace std;
 // #include <boost/smart_ptr.hpp>
 #include "intrinsic.h"
 
@@ -173,7 +175,7 @@ public:
                        const Intrinsic& intrinsics, RgbdImage& result, PointCloud& transformed_pointcloud);
     // here, the input point cloud is for only the selected points               
     Eigen::VectorXd warpIntensity2(const Eigen::MatrixXf& transformation, const PointCloud& reference_pointcloud, 
-                                const Intrinsic& intrinsics) const;
+                              const Intrinsic& intrinsics, bool vis, string file_name)const;
     // forward warping
     // transformation is the transformation from this image to the reference image
     void warpIntensityForward(const AffineTransform& transformation, const Intrinsic& intrinsics, RgbdImage& result, cv::Mat_<cv::Vec3d>& cloud);

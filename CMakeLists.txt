@@ -80,7 +80,7 @@ add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/intrinsic.cpp
                                         ${PROJECT_SOURCE_DIR}/src/interpolation.cpp
                                         ${PROJECT_SOURCE_DIR}/src/point_selection.cpp)
-target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS} Eigen3::Eigen )
 
 # add_library(${PROJECT_NAME}_solver SHARED ${PROJECT_SOURCE_DIR}/src/solver.cpp)
 # target_link_libraries(${PROJECT_NAME}_solver PUBLIC ${OpenCV_LIBS}
@@ -110,11 +110,12 @@ target_link_libraries( ${PROJECT_NAME}_frontend_solver PUBLIC Eigen3::Eigen
                                        # /usr/local/lib/libpango_windowing.so)
 
 add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_tb.cpp)
-target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES})  
+target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES} ${Yaml_cpp_LIBRARY})  
 add_executable( solver_wrapper ${PROJECT_SOURCE_DIR}/src/solver_wrapper.cpp)
 target_link_libraries(solver_wrapper  ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES}
                                     ${PROJECT_NAME}_TUM_loader ${Yaml_cpp_LIBRARY} )
 #add_executable( solver_test ${PROJECT_SOURCE_DIR}/src/experiments/solver_test.cpp)
+<<<<<<< HEAD
 #target_link_libraries( solver_test PUBLIC ${PROJECT_NAME}_frontend_solver ${PROJECT_NAME}_rgbd )    
 
 #find_package( G2O )
@@ -128,3 +129,6 @@ target_link_libraries(solver_wrapper  ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJ
 
 #add_executable( direct_sparse ${PROJECT_SOURCE_DIR}/src/slambook_utils/direct_sparse.cpp )
 #target_link_libraries( direct_sparse ${OpenCV_LIBS} ${G2O_LIBS} )
+=======
+#target_link_libraries( solver_test PUBLIC ${PROJECT_NAME}_frontend_solver ${PROJECT_NAME}_rgbd )    
+>>>>>>> 35d494edc453a9a217cc3d6934928ebf825b0e57
