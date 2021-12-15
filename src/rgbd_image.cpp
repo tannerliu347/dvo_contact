@@ -389,7 +389,8 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
     float ox = intrinsics.ox();
     float oy = intrinsics.oy();
     int outliers = 0;
-    int num_invalid_z = 0;
+    int num_inf_depth_img1 = 0;
+    int num_inf_depth_img2 = 0;
     int N = reference_pointcloud.cols();
     PointCloud transformed_pointcloud = transformation * reference_pointcloud;
     Eigen::VectorXf warped_intensities(N);
@@ -400,7 +401,7 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
         const Eigen::Vector4f& p3d = transformed_pointcloud.col(idx);
         if(!std::isfinite(p3d(2))) {
             warped_intensities(idx) = -1.0f;
-            num_invalid_z++;
+            num_inf_depth_img1++;
             continue;
         }
 
@@ -414,9 +415,10 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
             float z = (float) p3d(2);
             warped_intensities(idx) = Interpolation::bilinearWithDepth(this->intensity, this->depth, x_projected, y_projected, z);
             if(warped_intensities(idx) + 1.0f < 1e-5){
-                img2_pts_invalid_depth.push_back(pt);
+                num_inf_depth_img2 ++; 
+                if(vis) img2_pts_invalid_depth.push_back(pt);
             } else {
-                img2_pts_valid.push_back(pt);
+                if(vis) img2_pts_valid.push_back(pt);
             }
         } else {
             warped_intensities(idx) = -1.0f;
@@ -430,8 +432,9 @@ Eigen::VectorXd RgbdImage::warpIntensity2(const Eigen::MatrixXf& transformation,
         }
     }
     std::cout << "total input points to warp: " << N << std::endl;
-    std::cout << "total number of invalid z: " << num_invalid_z << std::endl;
-    std::cout << "total number of pt out of image: " << outliers << std::endl;
+    std::cout << "total number of invalid z in img1: " << num_inf_depth_img1 << std::endl;
+    std::cout << "total number of invalid z in img2: " << num_inf_depth_img2 << std::endl;
+    std::cout << "total number of warped pts out of img: " << outliers << std::endl;
     return warped_intensities.cast<double>();
 }
 

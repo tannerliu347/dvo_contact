@@ -19,7 +19,6 @@ float Interpolation::bilinearWithDepth(const cv::Mat& intensity, const cv::Mat& 
 
     float val = 0.0f;
     float sum = 0.0f;
-
     if(std::isfinite(depth.at<float>(y0, x0)) && depth.at<float>(y0, x0) > z_eps) {
         val += x0_weight * y0_weight * intensity.at<float>(y0, x0);
         sum += x0_weight * y0_weight;

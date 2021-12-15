@@ -123,10 +123,10 @@ class PhotometricError_ext {
     //std::cout << "DEBUG img1_intensity_" <<img1_intensity_;
     auto intensity_diff = warped_intensity_in_img2 - img1_intensity_;
 
-    //residual[0] = intensity_diff.norm();
-    residual[0] = cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_);
+    residual[0] = intensity_diff.norm();
+    //residual[0] = cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_);
     std::cout << "Residual  " << residual[0] << std::endl;  
-    std::cout << "Residual (discard invalid depth) " << cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_) << std::endl; 
+    cal_cost_discard_invalid_depth(warped_intensity_in_img2, img1_intensity_); 
     return true;
   }
 
@@ -156,6 +156,7 @@ double cal_cost_discard_invalid_depth(const Eigen::VectorXd& warped_img2_intensi
     }
     std::cout << "intensity RMSE: " << std::sqrt(cost_squared/(N-num_invalid)) <<std::endl;
     std::cout << "intensity mean err: " << l1_cost/(N-num_invalid) <<std::endl;
+    std::cout << "Residual (discard invalid depth) " << std::sqrt(cost_squared) <<std::endl;
     return std::sqrt(cost_squared);
 }
 
@@ -203,7 +204,7 @@ void FrontendSolver::solve(const dvo::PointCloud& pc1, const Eigen::VectorXd& im
     // solver output
     cout<<summary.FullReport() <<endl;
     cout<<"estimated transform quat:\n";
-    for ( auto t:quat ) cout<< t <<" ";
+    for ( auto t:quat ) cout << t <<" ";
     cout<<"\nestimated transform trans:\n";
     for ( auto t:trans ) cout<< t <<" ";
     cout<<endl; 

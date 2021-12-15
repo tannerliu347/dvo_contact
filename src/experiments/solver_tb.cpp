@@ -40,7 +40,6 @@ using namespace std;
 // namespace fs = std::filesystem;
 // using namespace cv::xfeatures2d;
 
-const int MAX_FEATURES = 500; // for orb_features 
 const float GOOD_MATCH_PERCENT = 0.15f;
 
 // define scaling factor
@@ -50,7 +49,7 @@ const float DEPTH_SCALE = 1.f / 5000;
 const size_t cam_width = 640;
 const size_t cam_height = 480;
 
-void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1);
+void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1, const int MAX_FEATURES);
 
 void read_image(const char* filename, Mat& canvas);
 
@@ -90,11 +89,12 @@ int main(int argc, char* argv[])
     cout << "cwd = " << cwd <<endl;
     YAML::Node config = YAML::LoadFile(config_file);
     // camera intrinsics 
+
     float fx = config["fx"].as<float>();
     float fy = config["fy"].as<float>();
     float ox = config["ox"].as<float>();
     float oy = config["oy"].as<float>();
-
+    const int MAX_FEATURES =  config["max_features"].as<int>(); // for orb_features 
     
     vector<double> q_t1_d = config["q_t1"].as<vector<double>>();
     vector<double> q_t2_d = config["q_t2"].as<vector<double>>();
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
     
     vector<KeyPoint> kps;
     Mat des;
-    extract_orb_features(img1_cvmat, kps, des);
+    extract_orb_features(img1_cvmat, kps, des, MAX_FEATURES);
 
     vector<Point2i> kept_kps;
     // discard all surrounding key points
@@ -351,7 +351,7 @@ Change                           8.301341e+05
     return 0;
 }
 
-void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1) 
+void extract_orb_features(Mat& img1, vector<KeyPoint>& keypoints1, Mat& descriptors1, const int MAX_FEATURES) 
 {
     Ptr<ORB> orb = ORB::create(MAX_FEATURES);
     orb->detectAndCompute(img1, Mat(), keypoints1, descriptors1);
