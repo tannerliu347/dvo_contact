@@ -38,7 +38,7 @@ using namespace std;
 // namespace fs = std::filesystem;
 // using namespace cv::xfeatures2d;
 
-const int MAX_FEATURES = 500; // for orb_features 
+const int MAX_FEATURES = 1500; // for orb_features 
 const float GOOD_MATCH_PERCENT = 0.15f;
 
 
@@ -99,13 +99,13 @@ int main()
     
     // read rgb image
     Mat img1_cvmat, img2_cvmat;
-    read_image("img1.png", img1_cvmat);
-    read_image("img2.png", img2_cvmat);
+    read_image("img1_old.png", img1_cvmat);
+    read_image("img2_old.png", img2_cvmat);
 
     //read intensity image
     Mat img1_intensity_discard, img2_intensity_discard;
-    read_intensity("img1.png", img1_intensity_discard);
-    read_intensity("img2.png", img2_intensity_discard);
+    read_intensity("img1_old.png", img1_intensity_discard);
+    read_intensity("img2_old.png", img2_intensity_discard);
 
     cv::Mat img1_intensity, img2_intensity;
     img1_intensity_discard.convertTo(img1_intensity, CV_32FC1);
@@ -119,8 +119,8 @@ int main()
     // read_depth("img1_depth.png", img1_depth_prescale);
     // read_depth("img2_depth.png", img2_depth_prescale);
 
-    read_depth("img1_depth.png", img1_depth_unscale);
-    read_depth("img2_depth.png", img2_depth_unscale);
+    read_depth("img1_depth_old.png", img1_depth_unscale);
+    read_depth("img2_depth_old.png", img2_depth_unscale);
 
     // scale the depth
     // cv::Mat img1_depth(cam_width, cam_height, CV_64F), img2_depth(cam_width, cam_height, CV_64F);
@@ -191,7 +191,7 @@ int main()
     Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> img1_depth_eigen, img1_intensity_eigen;
     cv2eigen(img1.depth, img1_depth_eigen);
     cv2eigen(img1_intensity, img1_intensity_eigen);
-    std::cout << "DEBUG more thorough inspection on depth" << img1_depth_eigen.col(500) << std::endl;
+    // std::cout << "DEBUG more thorough inspection on depth" << img1_depth_eigen.col(500) << std::endl;
     // std::cout << "DEBUG more thorough inspection on intensity" << tmp_intensity_eigen.col(200) <<std::endl;
 
     img1.intensity = img1_intensity;
@@ -392,13 +392,13 @@ void keypoint_plotter(Mat& img, vector<T>& points,
     cv::Scalar plot_color;
     switch (color)
     {
-    case 'g': plot_color = GREEN;   break;
-    case 'b': plot_color = BLUE;    break;
-    case 'r': plot_color = RED;     break;
-    case 'c': plot_color = CYAN;    break;
-    case 'y': plot_color = YELLOW;  break;
-    case 'm': plot_color = MAGENTA; break;
-    default:  plot_color = GREEN;   break;
+        case 'g': plot_color = GREEN;   break;
+        case 'b': plot_color = BLUE;    break;
+        case 'r': plot_color = RED;     break;
+        case 'c': plot_color = CYAN;    break;
+        case 'y': plot_color = YELLOW;  break;
+        case 'm': plot_color = MAGENTA; break;
+        default:  plot_color = GREEN;   break;
     }
     
     string cwd = get_current_dir_name();

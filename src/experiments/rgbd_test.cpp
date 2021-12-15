@@ -15,7 +15,7 @@
 #include <algorithm>
 
 void TUM_loader_test() {
-    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+    dvo::TUMLoader tum_loader("/home/chengjerry/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
     int i = 0;
     while (tum_loader.hasNext()) {
         std::vector<cv::Mat> cur_img = tum_loader.getImgs();

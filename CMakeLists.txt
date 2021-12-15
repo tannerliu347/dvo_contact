@@ -17,19 +17,16 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
-<<<<<<< HEAD
-#find_package(Pangolin 0.4 REQUIRED)
+# find_package(Pangolin 0.4 REQUIRED)
 find_package(Ceres REQUIRED )
-=======
-find_package(Pangolin 0.4 REQUIRED)
-find_package(G2O REQUIRED)
+# find_package(Pangolin 0.4 REQUIRED)
+# find_package(G2O REQUIRED)
 
 # G2O
-set( G2O_LIBS 
-    g2o_core g2o_types_sba g2o_solver_csparse g2o_stuff g2o_csparse_extension)
+#set( G2O_LIBS 
+#    g2o_core g2o_types_sba g2o_solver_csparse g2o_stuff g2o_csparse_extension)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
->>>>>>> c3b76c9c6a0a37576a9c7ec29c201c92d1daf432
 
 # Yaml:
 find_library(Yaml_cpp_LIBRARY yaml-cpp /usr/local/include/yaml-cpp/)
@@ -75,14 +72,9 @@ mark_as_advanced(YAMLCPP_INCLUDE_DIR YAMLCPP_LIBRARY)
 
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/include/experiments
-<<<<<<< HEAD
-                    #${Pangolin_INCLUDE_DIRS}
-                    ${CERES_INCLUDE_DIRS})
-=======
-                    ${Pangolin_INCLUDE_DIRS}
-                    ${G2O_INCLUDE_DIRS}
+                    # ${Pangolin_INCLUDE_DIRS}
+                    # ${G2O_INCLUDE_DIRS}
                     ${EIGEN3_INCLUDE_DIRS})
->>>>>>> c3b76c9c6a0a37576a9c7ec29c201c92d1daf432
 
 add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/intrinsic.cpp
@@ -90,32 +82,32 @@ add_library(${PROJECT_NAME}_rgbd SHARED ${PROJECT_SOURCE_DIR}/src/rgbd_image.cpp
                                         ${PROJECT_SOURCE_DIR}/src/point_selection.cpp)
 target_link_libraries(${PROJECT_NAME}_rgbd PUBLIC ${OpenCV_LIBS})
 
-add_library(${PROJECT_NAME}_solver SHARED ${PROJECT_SOURCE_DIR}/src/solver.cpp)
-target_link_libraries(${PROJECT_NAME}_solver PUBLIC ${OpenCV_LIBS}
-                                                    ${PROJECT_NAME}_rgbd
-                                                    ${G2O_LIBS})
+# add_library(${PROJECT_NAME}_solver SHARED ${PROJECT_SOURCE_DIR}/src/solver.cpp)
+# target_link_libraries(${PROJECT_NAME}_solver PUBLIC ${OpenCV_LIBS}
+                                                    # ${PROJECT_NAME}_rgbd
+                                                    # ${G2O_LIBS})
 
 add_library(${PROJECT_NAME}_TUM_loader SHARED ${PROJECT_SOURCE_DIR}/src/experiments/TUM_loader.cpp)
 target_link_libraries(${PROJECT_NAME}_TUM_loader PUBLIC ${PROJECT_NAME}_rgbd
-<<<<<<< HEAD
                                                         ${OpenCV_LIBS}) 
-        
-#add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)                
+
 add_library(${PROJECT_NAME}_frontend_solver SHARED ${PROJECT_SOURCE_DIR}/src/FrontendSolver.cpp)
 target_link_libraries( ${PROJECT_NAME}_frontend_solver PUBLIC Eigen3::Eigen 
-                                                      ${PROJECT_NAME}_rgbd  
-                                                      ${CERES_LIBRARIES} 
-                                                      ${OpenCV_LIBS} )   
-                                 
+                                                        ${PROJECT_NAME}_rgbd  
+                                                        ${CERES_LIBRARIES} 
+                                                        ${OpenCV_LIBS} )   
+
+# add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)                
+                              
 # target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
-#                                        ${PROJECT_NAME}_TUM_loader
-#                                        ${PROJECT_NAME}_point_selection
-#                                        ${OpenCV_LIBS}
-#                                        ${Yaml_cpp_LIBRARY}
-#                                        ${Pangolin_LIBRARIES})
-#                                        pango_display
-#                                        pango_scene
-#                                        /usr/local/lib/libpango_windowing.so)
+                                       # ${PROJECT_NAME}_TUM_loader
+                                       # ${PROJECT_NAME}_point_selection
+                                       # ${OpenCV_LIBS}
+                                       # ${Yaml_cpp_LIBRARY})
+                                       # ${Pangolin_LIBRARIES})
+                                       # pango_display
+                                       # pango_scene
+                                       # /usr/local/lib/libpango_windowing.so)
 
 add_executable( solver_test_bench ${PROJECT_SOURCE_DIR}/src/experiments/solver_tb.cpp)
 target_link_libraries( solver_test_bench PUBLIC ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJECT_NAME}_frontend_solver ${CERES_LIBRARIES})  
@@ -136,14 +128,3 @@ target_link_libraries(solver_wrapper  ${PROJECT_NAME}_rgbd ${OpenCV_LIBS} ${PROJ
 
 #add_executable( direct_sparse ${PROJECT_SOURCE_DIR}/src/slambook_utils/direct_sparse.cpp )
 #target_link_libraries( direct_sparse ${OpenCV_LIBS} ${G2O_LIBS} )
-=======
-                                                        ${OpenCV_LIBS})
-
-add_executable(rgbd_test ${PROJECT_SOURCE_DIR}/src/experiments/rgbd_test.cpp)
-target_link_libraries(rgbd_test PUBLIC ${PROJECT_NAME}_rgbd
-                                       ${PROJECT_NAME}_solver
-                                       ${PROJECT_NAME}_TUM_loader
-                                       ${OpenCV_LIBS}
-                                       ${Yaml_cpp_LIBRARY}
-                                       ${Pangolin_LIBRARIES})
->>>>>>> c3b76c9c6a0a37576a9c7ec29c201c92d1daf432
