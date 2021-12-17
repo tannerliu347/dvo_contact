@@ -2,7 +2,7 @@
 
 #include "rgbd_image.h"
 #include "point_selection.h"
-
+#include "yaml-cpp/yaml.h"
 #include <opencv2/opencv.hpp>
 
 #include <g2o/core/base_unary_edge.h>
@@ -109,7 +109,7 @@ protected:
 
 class Solver {
 public:
-    Solver() {}
+    Solver(YAML::Node& config_setting): config_setting_(config_setting) {}
     
     bool solve(const PtSelection::PtIterator start_it, const PtSelection::PtIterator end_it, const RgbdImage& img2, Eigen::Isometry3d& Tcw) {
         typedef g2o::BlockSolver<g2o::BlockSolverTraits<6,1>> DirectBlock;
@@ -140,11 +140,14 @@ public:
             optimizer.addEdge(edge);
         }
         optimizer.initializeOptimization();
-        optimizer.optimize(30);
+        optimizer.optimize(config_setting_["dvo"]["max_optimize_iteration"].as<int>());
         Tcw = pose->estimate();
         // std::cout << "solved\n";
         return true;
     }
+
+private:
+YAML::Node& config_setting_;
 
 };
 

@@ -330,19 +330,14 @@ inline Eigen::Vector2d project3Dto2D ( float x, float y, float z, float fx, floa
     return Eigen::Vector2d ( u,v );
 }
 
-void solver_test() {
-    dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
+void solver_test(YAML::Node& config_setting) {
+    dvo::TUMLoader tum_loader(config_setting["dvo"]["image_load_path"].as<std::string>());
     // tum_loader.teleportToFrame();
     // save to trajectory
-    std::ofstream out_file("/home/tannerliu/dvo_contact/trajectory.txt");
+    std::ofstream out_file(config_setting["dvo"]["trajectory_save_path"].as<std::string>());
 
     // solver
-    dvo::Solver g2o_solver;
-    
-    char resolved_path[PATH_MAX];
-    char* tmp = realpath("../", resolved_path);
-    std::cout << resolved_path << std::endl;
-    YAML::Node config_setting = YAML::LoadFile(std::string(resolved_path) + "/config/config.yaml");
+    dvo::Solver g2o_solver(config_setting);
 
     size_t cam_width = config_setting["dvo"]["image_width"].as<size_t>();
     size_t cam_height = config_setting["dvo"]["image_height"].as<size_t>();
@@ -491,7 +486,7 @@ int main() {
     std::string image_load_path = config_setting["dvo"]["image_load_path"] ? config_setting["dvo"]["image_load_path"].as<std::string>() 
                                                                 : "/home/tingjun/code/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/";
     // TUM_loader_test();
-    solver_test();
+    solver_test(config_setting);
     // rgbd_camera_test(image_load_path);
 
     // pt_selection_test(config_setting);
