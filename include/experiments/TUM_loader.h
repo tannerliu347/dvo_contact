@@ -29,9 +29,11 @@ public:
      */
     std::vector<cv::Mat> getImgs();
 
+    cv::Mat getRaw();
+
     AffineTransform getPose();
 
-    float getTimestamp();
+    double getTimestamp();
 
     bool step();
 
@@ -46,7 +48,7 @@ private:
     cv::Mat depthRawToM(cv::Mat& depth_raw);
 
 private:
-    std::vector<float> timestamps_;
+    std::vector<double> timestamps_;
     std::vector<std::string> rgb_files_;
     std::vector<std::string> dep_files_;
     std::vector<Pose> trajectory_; 

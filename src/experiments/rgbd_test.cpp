@@ -315,6 +315,21 @@ void pt_selection_test(YAML::Node config_setting) {
 
 }
 
+inline Eigen::Vector3d project2Dto3D ( int x, int y, int d, float fx, float fy, float cx, float cy, float scale )
+{
+    float zz = float ( d ) /scale;
+    float xx = zz* ( x-cx ) /fx;
+    float yy = zz* ( y-cy ) /fy;
+    return Eigen::Vector3d ( xx, yy, zz );
+}
+
+inline Eigen::Vector2d project3Dto2D ( float x, float y, float z, float fx, float fy, float cx, float cy )
+{
+    float u = fx*x/z+cx;
+    float v = fy*y/z+cy;
+    return Eigen::Vector2d ( u,v );
+}
+
 void solver_test() {
     dvo::TUMLoader tum_loader("/home/tannerliu/dvo_contact/dataset/rgbd_dataset_freiburg1_xyz/");
     // tum_loader.teleportToFrame();
@@ -340,6 +355,7 @@ void solver_test() {
 
     cv::Mat previous_intensity, current_intensity;
     cv::Mat previous_depth, current_depth;
+    cv::Mat prev_color, curr_color;
     
     std::vector<cv::Mat> previous_img(2);
     std::vector<cv::Mat> current_img(2);
@@ -348,6 +364,13 @@ void solver_test() {
     previous_intensity = previous_img[0];
     previous_depth = previous_img[1];
 
+    prev_color = tum_loader.getRaw();
+
+    float fx = 525.0;
+    float fy = 525.0;
+    float cx = 319.5;  
+    float cy = 239.5;  
+
     dvo::PtAndGradVerify pt_verifier;
     pt_verifier.intensity_threshold = config_setting["dvo"]["intensity_threshold"].as<float>();
     pt_verifier.depth_threshold = config_setting["dvo"]["depth_threshold"].as<float>();
@@ -355,9 +378,9 @@ void solver_test() {
     int i = 0;
 
     dvo::AffineTransform gt = tum_loader.getPose();
-    Eigen::Isometry3d gt_start_pose;
-    gt_start_pose.translation() = gt.translation().cast<double>();
-    gt_start_pose.linear() = gt.rotation().cast<double>();
+    Eigen::Isometry3d gt_start_pose = Eigen::Isometry3d::Identity();
+    // gt_start_pose.translation() = Eigen::Matrix;
+    // gt_start_pose.linear() = gt.rotation().cast<double>();
 
     while (tum_loader.hasNext())
     {
@@ -366,6 +389,7 @@ void solver_test() {
         current_img = tum_loader.getImgs();
         current_intensity = current_img[0];
         current_depth = current_img[1];
+        curr_color = tum_loader.getRaw();
 
         // dvo::RgbdImage current_rgbd(camera);
         // current_rgbd.intensity = current_intensity;
@@ -388,20 +412,69 @@ void solver_test() {
             
             g2o_solver.solve(start_pointer, end_pointer, cur_lvl_img, Tcw);
         }
-        // std::cout << "=================================\n";
-        // std::cout << "solver results\n";
-        // std::cout << Tcw.translation() << std::endl;
-        // std::cout << Tcw.rotation() << std::endl;
+        std::cout << "=================================\n";
+        std::cout << "solver results\n";
+        std::cout << Tcw.translation() << std::endl;
+        std::cout << Tcw.rotation() << std::endl;
         // std::cout << "ground truth\n";
         // std::cout << gt_pose.translation() << std::endl;
         // std::cout << gt_pose.rotation() << std::endl;
         gt_start_pose = gt_start_pose * Tcw;
-        out_file << std::fixed << std::setprecision(8) << tum_loader.getTimestamp();
+        Eigen::Quaterniond quat = Eigen::Quaterniond(gt_start_pose.rotation());
+        Eigen::Vector4d quat_coeff = quat.coeffs();
+
+        out_file << std::fixed << std::setprecision(4) << tum_loader.getTimestamp();
         out_file << " " << gt_start_pose.translation()(0) << " " << gt_start_pose.translation()(1) 
-                 << " " << gt_start_pose.translation()(2) << " " << 0.0 << " " << 0.0 << " " << 0.0 << " " << 0.0 << "\n";
+                 << " " << gt_start_pose.translation()(2) << " " << quat_coeff(0) << " " << quat_coeff(1) << " " << quat_coeff(2) << " " << quat_coeff(3) << "\n";
+
+
+
+        // // plot the feature points
+        // cv::Mat img_show ( curr_color.rows*2, curr_color.cols, CV_8UC3 );
+        // prev_color.copyTo ( img_show ( cv::Rect ( 0,0,curr_color.cols, curr_color.rows ) ) );
+        // curr_color.copyTo ( img_show ( cv::Rect ( 0,curr_color.rows,curr_color.cols, curr_color.rows ) ) );
+        // // 对ref_frame提取FAST特征点
+        // std::vector<cv::KeyPoint> keypoints;
+        // cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create();
+        // detector->detect (prev_color, keypoints );
+        // std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> select_pts;
+        // for ( auto kp:keypoints )
+        // {
+        //     // 去掉邻近边缘处的点
+        //     if ( kp.pt.x < 20 || kp.pt.y < 20 || ( kp.pt.x+20 ) > prev_color.cols || ( kp.pt.y+20 ) > prev_color.rows )
+        //         continue;
+        //     ushort d = previous_depth.ptr<ushort> ( cvRound ( kp.pt.y ) ) [ cvRound ( kp.pt.x ) ];
+        //     if ( d==0 )
+        //         continue;
+        //     Eigen::Vector3d p3d = project2Dto3D ( kp.pt.x, kp.pt.y, d, fx, fy, cx, cy, 1 );
+        //     float grayscale = float ( previous_intensity.ptr<uchar> ( cvRound ( kp.pt.y ) ) [ cvRound ( kp.pt.x ) ] );
+        //     select_pts.push_back (p3d);
+        // }
+        // for ( auto m : select_pts )
+        // {
+        //     if ( rand() > RAND_MAX/1000 )
+        //         continue;
+        //     Eigen::Vector3d p = m;
+        //     Eigen::Vector2d pixel_prev = project3Dto2D ( p ( 0,0 ), p ( 1,0 ), p ( 2,0 ), fx, fy, cx, cy );
+        //     Eigen::Vector3d p2 = Tcw*p;
+        //     Eigen::Vector2d pixel_now = project3Dto2D ( p2 ( 0,0 ), p2 ( 1,0 ), p2 ( 2,0 ), fx, fy, cx, cy );
+        //     if ( pixel_now(0,0)<0 || pixel_now(0,0)>=curr_color.cols || pixel_now(1,0)<0 || pixel_now(1,0)>=curr_color.rows )
+        //         continue;
+
+        //     float b = 255*float ( rand() ) /RAND_MAX;
+        //     float g = 255*float ( rand() ) /RAND_MAX;
+        //     float r = 255*float ( rand() ) /RAND_MAX;
+        //     cv::circle ( img_show, cv::Point2d ( pixel_prev ( 0,0 ), pixel_prev ( 1,0 ) ), 8, cv::Scalar ( b,g,r ), 2 );
+        //     cv::circle ( img_show, cv::Point2d ( pixel_now ( 0,0 ), pixel_now ( 1,0 ) +curr_color.rows ), 8, cv::Scalar ( b,g,r ), 2 );
+        //     cv::line ( img_show, cv::Point2d ( pixel_prev ( 0,0 ), pixel_prev ( 1,0 ) ), cv::Point2d ( pixel_now ( 0,0 ), pixel_now ( 1,0 ) +curr_color.rows ), cv::Scalar ( b,g,r ), 1 );
+        // }
+        // cv::imshow ( "result", img_show );
+        // cv::waitKey (5000);
+
 
         previous_intensity = current_intensity;
         previous_depth = current_depth;
+        prev_color = curr_color;
         std::cout << i++ << std::endl;
 
     }

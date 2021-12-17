@@ -12,7 +12,7 @@ TUMLoader::TUMLoader(std::string TUM_dir) : idx_(0), cam_calib_(525.0, 525.0, 31
     }
 
     float tx, ty, tz, qx, qy, qz, qw;
-    float timestamp, timestamp_rgb, timestamp_depth;
+    double timestamp, timestamp_rgb, timestamp_depth;
     std::string rgb_file, dep_file;
     while (pair_file >> timestamp >> tx >> ty >> tz >> qx >> qy >> qz >> qw >> timestamp_rgb >> rgb_file >> timestamp_depth >> dep_file) {        
         Pose pose{tx, ty, tz, qx, qy, qz, qw};
@@ -64,6 +64,11 @@ std::vector<cv::Mat> TUMLoader::getImgs() {
     return res;
 }
 
+cv::Mat TUMLoader::getRaw() {
+    cv::Mat grey = cv::imread(rgb_files_[idx_], cv::IMREAD_COLOR);
+    return grey;
+}
+
 AffineTransform TUMLoader::getPose() {
     Pose cp = trajectory_[idx_];
     Eigen::Quaternionf quat_ref(cp.qw, cp.qx, cp.qy, cp.qz);
@@ -72,7 +77,7 @@ AffineTransform TUMLoader::getPose() {
     return af_ref;
 }
 
-float TUMLoader::getTimestamp() {
+double TUMLoader::getTimestamp() {
     return timestamps_[idx_];
 }
 

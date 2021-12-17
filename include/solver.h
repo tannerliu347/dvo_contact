@@ -26,8 +26,10 @@ public:
                                                   cur_image_(cur_image) {}
                                             
     void computeError() {
-        const g2o::VertexSE3Expmap* v  =static_cast<const g2o::VertexSE3Expmap*> ( _vertices[0] );
+        const g2o::VertexSE3Expmap* v = static_cast<const g2o::VertexSE3Expmap*> ( _vertices[0] );
+        // transform the point to next frame's local frame?
         Eigen::Vector3d x_local = v->estimate().map(point_world_.cast<double>());
+        // project to next frame's image plane
         float x = x_local(0) * intrinsics_.fx() / x_local(2) + intrinsics_.ox();
         float y = x_local(1) * intrinsics_.fy() / x_local(2) + intrinsics_.oy();
         // check x,y is in the image
